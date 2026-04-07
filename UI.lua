@@ -17,18 +17,18 @@ local T = {
     Bg          = Color3.fromRGB(8,   8,   8),
     Sidebar     = Color3.fromRGB(4,   4,   4),
     Header      = Color3.fromRGB(5,   5,   5),
-    Accent      = Color3.fromRGB(220, 40,  40),
-    AccentDark  = Color3.fromRGB(130, 18,  18),
+    Accent      = Color3.fromRGB(0,   195, 220),
+    AccentDark  = Color3.fromRGB(0,   110, 135),
     Text        = Color3.fromRGB(230, 230, 230),
-    TextRed     = Color3.fromRGB(220, 40,  40),
+    TextRed     = Color3.fromRGB(0,   195, 220),
     TextDim     = Color3.fromRGB(95,  95,  95),
     Elem        = Color3.fromRGB(13,  13,  13),
     ElemHov     = Color3.fromRGB(20,  20,  20),
-    Border      = Color3.fromRGB(220, 40,  40),
+    Border      = Color3.fromRGB(0,   195, 220),
     BorderDim   = Color3.fromRGB(30,  30,  30),
-    SliderFill  = Color3.fromRGB(220, 40,  40),
+    SliderFill  = Color3.fromRGB(0,   195, 220),
     SliderBg    = Color3.fromRGB(26,  26,  26),
-    ToggleOn    = Color3.fromRGB(220, 40,  40),
+    ToggleOn    = Color3.fromRGB(0,   195, 220),
     ToggleOff   = Color3.fromRGB(36,  36,  36),
     TabActive   = Color3.fromRGB(18,  18,  18),
     TabInactive = Color3.fromRGB(9,   9,   9),
@@ -123,7 +123,7 @@ titleLabel.Parent             = topBar
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size             = UDim2.new(0, 26, 0, 26)
 closeBtn.Position         = UDim2.new(1, -33, 0.5, -13)
-closeBtn.BackgroundColor3 = Color3.fromRGB(155, 22, 22)
+closeBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 155)
 closeBtn.BorderSizePixel  = 0
 closeBtn.Text             = "X"
 closeBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
@@ -139,7 +139,7 @@ closeBtn.MouseEnter:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.Accent}):Play()
 end)
 closeBtn.MouseLeave:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(155, 22, 22)}):Play()
+    TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(0, 130, 155)}):Play()
 end)
 
 -- ══════════════════════════════════════════════════════════════════
