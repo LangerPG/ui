@@ -900,15 +900,42 @@ local function NewLabel(parent, text)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   COLOR PICKER  — colapsable
+--   COLOR PICKER  — colapsable  (con inputs HEX + RGB)
 -- ══════════════════════════════════════════════════════════════════
 local function NewColorPicker(parent, label, sub, defaultColor, callback)
-    local SQ_H  = 115
-    local HUE_W = 16
-    local GAP   = 14
-    local PAD   = 10
-    local SQ_Y  = 8
-    local BODY_H = SQ_Y + SQ_H + 10
+    -- Color por defecto oscuro; el usuario puede pasar el suyo propio
+    defaultColor = defaultColor or Color3.fromRGB(15, 15, 15)
+
+    local SQ_H   = 115
+    local HUE_W  = 16
+    local GAP    = 14
+    local PAD    = 10
+    local SQ_Y   = 8
+    local INP_H  = 26                          -- altura fila de inputs
+    local INP_Y  = SQ_Y + SQ_H + 10           -- = 133 (debajo del picker)
+    local BODY_H = INP_Y + INP_H + 9          -- = 168
+
+    -- ── Helpers de color ────────────────────────────────────────
+    local function toHexStr(c)
+        return string.format("#%02X%02X%02X",
+            math.floor(c.R * 255 + 0.5),
+            math.floor(c.G * 255 + 0.5),
+            math.floor(c.B * 255 + 0.5))
+    end
+    local function fromHexStr(s)
+        s = s:gsub("#", ""):gsub("%s", "")
+        if #s ~= 6 then return nil end
+        local r = tonumber(s:sub(1, 2), 16)
+        local g = tonumber(s:sub(3, 4), 16)
+        local b = tonumber(s:sub(5, 6), 16)
+        if not (r and g and b) then return nil end
+        return Color3.fromRGB(r, g, b)
+    end
+    local function clampByte(n)
+        n = tonumber(n)
+        if not n then return nil end
+        return math.clamp(math.floor(n + 0.5), 0, 255)
+    end
 
     local container = Instance.new("Frame")
     container.Size              = UDim2.new(1, 0, 0, 0)
@@ -983,6 +1010,7 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
 
     local H, S, V = Color3.toHSV(defaultColor)
 
+    -- ── Cuadrado SV ─────────────────────────────────────────────
     local square = Instance.new("Frame")
     square.Size             = UDim2.new(1, -(PAD + GAP + HUE_W + PAD), 0, SQ_H)
     square.Position         = UDim2.new(0, PAD, 0, SQ_Y)
@@ -1043,6 +1071,7 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
     sqBtn.ZIndex               = 11
     sqBtn.Parent               = square
 
+    -- ── Barra Hue ───────────────────────────────────────────────
     local hueBar = Instance.new("Frame")
     hueBar.Size             = UDim2.new(0, HUE_W, 0, SQ_H)
     hueBar.Position         = UDim2.new(1, -(PAD + HUE_W), 0, SQ_Y)
@@ -1084,13 +1113,68 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
     hueBtn.ZIndex               = 11
     hueBtn.Parent               = hueBar
 
+    -- ── Fila de inputs HEX + R G B ──────────────────────────────
+    -- HEX ocupa la izquierda; R,G,B anclados a la derecha
+    -- B: [1, -44] w=34   G: [1, -82] w=34   R: [1, -120] w=34
+    -- HEX: [0, 10] hasta [1, -126] → size UDim2.new(1,-136,0,INP_H)
+    local function makeInputBox(posX_scale, posX_off, sizeX_scale, sizeX_off, placeholder)
+        local bg = Instance.new("Frame")
+        bg.Size             = UDim2.new(sizeX_scale, sizeX_off, 0, INP_H)
+        bg.Position         = UDim2.new(posX_scale,  posX_off,  0, INP_Y)
+        bg.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+        bg.BorderSizePixel  = 0
+        bg.Parent           = body
+        Corner(bg, 4)
+        Stroke(bg, T.BorderDim, 1)
+
+        local box = Instance.new("TextBox")
+        box.Size                 = UDim2.new(1, -6, 1, 0)
+        box.Position             = UDim2.new(0, 3, 0, 0)
+        box.BackgroundTransparency = 1
+        box.Text                 = placeholder
+        box.PlaceholderText      = placeholder
+        box.TextColor3           = T.Text
+        box.PlaceholderColor3    = T.TextDim
+        box.TextSize             = 11
+        box.Font                 = Enum.Font.GothamSemibold
+        box.TextXAlignment       = Enum.TextXAlignment.Center
+        box.ClearTextOnFocus     = false
+        box.Parent               = bg
+        return box
+    end
+
+    local hexBox = makeInputBox(0,  PAD,   1, -136, "#000000")  -- izquierda, ancho flexible
+    local rBox   = makeInputBox(1, -120,   0,   34, "R")        -- anclado derecha
+    local gBox   = makeInputBox(1,  -82,   0,   34, "G")
+    local bBox   = makeInputBox(1,  -44,   0,   34, "B")
+
+    -- ── Lógica del picker ────────────────────────────────────────
     local function getColor() return Color3.fromHSV(H, S, V) end
 
-    local function refresh()
+    local function refreshInputs()
+        local c   = getColor()
+        local r   = math.floor(c.R * 255 + 0.5)
+        local g   = math.floor(c.G * 255 + 0.5)
+        local b   = math.floor(c.B * 255 + 0.5)
+        hexBox.Text = string.format("#%02X%02X%02X", r, g, b)
+        rBox.Text   = tostring(r)
+        gBox.Text   = tostring(g)
+        bBox.Text   = tostring(b)
+    end
+
+    local function refreshVisuals()
         local c = getColor()
         preview.BackgroundColor3 = c
         square.BackgroundColor3  = Color3.fromHSV(H, 1, 1)
         if callback then callback(c) end
+    end
+
+    local function applyHSV(nh, ns, nv)
+        H = nh; S = ns; V = nv
+        sqKnob.Position  = UDim2.new(S, 0, 1 - V, 0)
+        hueKnob.Position = UDim2.new(0, -2, H, 0)
+        refreshVisuals()
+        refreshInputs()
     end
 
     local function updateFromSquare(mx, my)
@@ -1098,7 +1182,8 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
         local ry = math.clamp((my - square.AbsolutePosition.Y) / square.AbsoluteSize.Y, 0, 1)
         S = rx; V = 1 - ry
         sqKnob.Position = UDim2.new(rx, 0, ry, 0)
-        refresh()
+        refreshVisuals()
+        refreshInputs()
     end
 
     local function updateFromHue(my)
@@ -1106,7 +1191,8 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
         H = ry
         hueKnob.Position        = UDim2.new(0, -2, ry, 0)
         square.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
-        refresh()
+        refreshVisuals()
+        refreshInputs()
     end
 
     local dragSq, dragHue = false, false
@@ -1132,6 +1218,34 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
         end
     end)
 
+    -- Input HEX: al perder el foco aplica el color
+    hexBox.FocusLost:Connect(function()
+        local c = fromHexStr(hexBox.Text)
+        if c then
+            local nh, ns, nv = Color3.toHSV(c)
+            applyHSV(nh, ns, nv)
+        else
+            refreshInputs()  -- restaurar valor válido
+        end
+    end)
+
+    -- Inputs RGB: al perder el foco aplica el color
+    local function applyRGB()
+        local r = clampByte(rBox.Text)
+        local g = clampByte(gBox.Text)
+        local b = clampByte(bBox.Text)
+        if r and g and b then
+            local nh, ns, nv = Color3.toHSV(Color3.fromRGB(r, g, b))
+            applyHSV(nh, ns, nv)
+        else
+            refreshInputs()  -- restaurar valores válidos
+        end
+    end
+    rBox.FocusLost:Connect(applyRGB)
+    gBox.FocusLost:Connect(applyRGB)
+    bBox.FocusLost:Connect(applyRGB)
+
+    -- Colapsar/expandir
     local expanded = false
     headerBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
@@ -1155,24 +1269,16 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
         TweenService:Create(hStroke, TweenInfo.new(0.1), {Color = T.BorderDim}):Play()
     end)
 
-    preview.BackgroundColor3 = defaultColor
-    square.BackgroundColor3  = Color3.fromHSV(H, 1, 1)
-    refresh()
+    -- Inicializar con el color por defecto
+    H, S, V = Color3.toHSV(defaultColor)
+    sqKnob.Position  = UDim2.new(S, 0, 1 - V, 0)
+    hueKnob.Position = UDim2.new(0, -2, H, 0)
+    square.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
+    refreshVisuals()
+    refreshInputs()
 
     return container
 end
-
--- ══════════════════════════════════════════════════════════════════
---   SEARCH PANEL  — buscador de ítems con selector de cantidad
---
---   Uso:
---       NewSearchPanel(tabData, {
---           getWeapons = function() return {"Rifle", "Knife", ...} end,
---           onSend     = function(weaponName, amount) ... end,
---       })
---
---   El panel se registra como `customPanel` del tabData indicado, de
---   modo que SelectTab lo muestra/oculta automáticamente.
 -- ══════════════════════════════════════════════════════════════════
 local function NewSearchPanel(searchTabData, opts)
     local getWeapons = opts and opts.getWeapons
