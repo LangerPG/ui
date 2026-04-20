@@ -1340,7 +1340,7 @@ local function NewSearchPanel(searchTabData, opts)
     amountBox.FocusLost:Connect(function()
         local n = tonumber(amountBox.Text)
         if not n or n < 1 then n = 1 end
-        n = math.min(math.floor(n), 9999)
+        n = math.floor(n)
         selectedAmount  = n
         amountBox.Text  = tostring(n)
     end)
