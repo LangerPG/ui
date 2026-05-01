@@ -3,24 +3,24 @@ local UserInputService = game:GetService("UserInputService")
 local Players          = game:GetService("Players")
 local LocalPlayer      = Players.LocalPlayer
 local T = {
-    Bg          = Color3.fromRGB(8,   8,   8),
-    Sidebar     = Color3.fromRGB(4,   4,   4),
-    Header      = Color3.fromRGB(5,   5,   5),
-    Accent      = Color3.fromRGB(0,   195, 220),
-    AccentDark  = Color3.fromRGB(0,   110, 135),
+    Bg          = Color3.fromRGB(0,   0,   0),
+    Sidebar     = Color3.fromRGB(0,   0,   0),
+    Header      = Color3.fromRGB(3,   3,   3),
+    Accent      = Color3.fromRGB(40,  40,  40),
+    AccentDark  = Color3.fromRGB(20,  20,  20),
     Text        = Color3.fromRGB(230, 230, 230),
-    TextRed     = Color3.fromRGB(0,   195, 220),
-    TextDim     = Color3.fromRGB(95,  95,  95),
-    Elem        = Color3.fromRGB(13,  13,  13),
-    ElemHov     = Color3.fromRGB(20,  20,  20),
-    Border      = Color3.fromRGB(0,   195, 220),
-    BorderDim   = Color3.fromRGB(30,  30,  30),
-    SliderFill  = Color3.fromRGB(0,   195, 220),
-    SliderBg    = Color3.fromRGB(26,  26,  26),
-    ToggleOn    = Color3.fromRGB(0,   195, 220),
-    ToggleOff   = Color3.fromRGB(36,  36,  36),
-    TabActive   = Color3.fromRGB(18,  18,  18),
-    TabInactive = Color3.fromRGB(9,   9,   9),
+    TextRed     = Color3.fromRGB(140, 140, 140),
+    TextDim     = Color3.fromRGB(80,  80,  80),
+    Elem        = Color3.fromRGB(10,  10,  10),
+    ElemHov     = Color3.fromRGB(18,  18,  18),
+    Border      = Color3.fromRGB(40,  40,  40),
+    BorderDim   = Color3.fromRGB(25,  25,  25),
+    SliderFill  = Color3.fromRGB(40,  40,  40),
+    SliderBg    = Color3.fromRGB(18,  18,  18),
+    ToggleOn    = Color3.fromRGB(55,  55,  55),
+    ToggleOff   = Color3.fromRGB(28,  28,  28),
+    TabActive   = Color3.fromRGB(15,  15,  15),
+    TabInactive = Color3.fromRGB(6,   6,   6),
 }
 
 local _accentObjs = {}
@@ -30,7 +30,6 @@ local function _regDark(o, p) table.insert(_accentDarkObjs, {o, p}) end
 
 local function setAccentColor(color)
     T.Accent     = color
-    T.TextRed    = color
     T.Border     = color
     T.SliderFill = color
     T.ToggleOn   = color
@@ -111,7 +110,7 @@ titleLabel.Parent             = topBar
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size             = UDim2.new(0, 26, 0, 26)
 closeBtn.Position         = UDim2.new(1, -33, 0.5, -13)
-closeBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 155)
+closeBtn.BackgroundColor3 = T.AccentDark
 closeBtn.BorderSizePixel  = 0
 closeBtn.Text             = "X"
 closeBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
@@ -121,12 +120,13 @@ closeBtn.AutoButtonColor  = false
 closeBtn.ZIndex           = 8
 closeBtn.Parent           = topBar
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+_regDark(closeBtn, "BackgroundColor3")
 closeBtn.MouseButton1Click:Connect(function() mainFrame.Visible = false end)
 closeBtn.MouseEnter:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.Accent}):Play()
 end)
 closeBtn.MouseLeave:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(0, 130, 155)}):Play()
+    TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.AccentDark}):Play()
 end)
 local bodyFrame = Instance.new("Frame")
 bodyFrame.Size              = UDim2.new(1, 0, 1, -60)
@@ -161,7 +161,7 @@ footerLabel.Font                  = Enum.Font.GothamSemibold
 footerLabel.TextXAlignment        = Enum.TextXAlignment.Center
 footerLabel.ZIndex                = 6
 footerLabel.Parent                = footer
-_regAcc(footerLabel, "TextColor3")
+-- footerLabel usa TextRed fijo
 local sidebar = Instance.new("Frame")
 sidebar.Name             = "Sidebar"
 sidebar.Size             = UDim2.new(0, 118, 1, 0)
@@ -241,6 +241,7 @@ local function NewTab(name, icon, order)
     _regAcc(accentBar, "BackgroundColor3")
     local iconIsImage = (type(icon) == "number") or
                         (type(icon) == "string" and (icon:match("^%d+$") or icon:match("^rbxassetid://")))
+    local hasVisibleIcon = iconIsImage or (type(icon) == "string" and icon ~= "")
     if iconIsImage then
         local rawId = type(icon) == "number" and tostring(icon)
                       or (icon:match("^%d+$") and icon or icon:gsub("rbxassetid://",""))
@@ -252,7 +253,7 @@ local function NewTab(name, icon, order)
         iconImg.ImageColor3          = T.TextDim
         iconImg.ScaleType            = Enum.ScaleType.Fit
         iconImg.Parent               = btn
-    else
+    elseif type(icon) == "string" and icon ~= "" then
         local iconLbl = Instance.new("TextLabel")
         iconLbl.Size                 = UDim2.new(0, 22, 1, 0)
         iconLbl.Position             = UDim2.new(0, 9, 0, 0)
@@ -265,8 +266,8 @@ local function NewTab(name, icon, order)
     end
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Name                 = "Label"
-    nameLbl.Size                 = UDim2.new(1, -36, 1, 0)
-    nameLbl.Position             = UDim2.new(0, 35, 0, 0)
+    nameLbl.Size                 = hasVisibleIcon and UDim2.new(1, -36, 1, 0) or UDim2.new(1, -14, 1, 0)
+    nameLbl.Position             = hasVisibleIcon and UDim2.new(0, 35, 0, 0) or UDim2.new(0, 10, 0, 0)
     nameLbl.BackgroundTransparency = 1
     nameLbl.Text                 = name
     nameLbl.TextColor3           = T.TextDim
@@ -356,7 +357,7 @@ local function NewSection(parent, title)
     hdrTxt.Font              = Enum.Font.GothamSemibold
     hdrTxt.TextXAlignment    = Enum.TextXAlignment.Left
     hdrTxt.Parent            = hdr
-    _regAcc(hdrTxt, "TextColor3")
+    -- hdrTxt color fijo, no cambia con accent
     local hdrLine = Instance.new("Frame")
     hdrLine.Size             = UDim2.new(1, 0, 0, 1)
     hdrLine.Position         = UDim2.new(0, 0, 1, -1)
@@ -510,7 +511,7 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback)
     valLbl.Font              = Enum.Font.GothamSemibold
     valLbl.TextXAlignment    = Enum.TextXAlignment.Right
     valLbl.Parent            = f
-    _regAcc(valLbl, "TextColor3")
+    -- valLbl color fijo
     local trackBg = Instance.new("Frame")
     trackBg.Size             = UDim2.new(1, -20, 0, 6)
     trackBg.Position         = UDim2.new(0, 10, 1, -16)
@@ -603,7 +604,7 @@ local function NewButton(parent, label, sub, callback)
     arrow.TextSize          = 22
     arrow.Font              = Enum.Font.GothamSemibold
     arrow.Parent            = f
-    _regAcc(arrow, "TextColor3")
+    -- arrow color fijo
     local btn = Instance.new("TextButton")
     btn.Size                 = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
@@ -732,7 +733,7 @@ local function NewKeybind(parent, label, sub, defaultKey, callback)
     keyLbl.TextSize             = 11
     keyLbl.Font                 = Enum.Font.GothamSemibold
     keyLbl.Parent               = keyBg
-    _regAcc(keyLbl, "TextColor3")
+    -- keyLbl color fijo
     local keyBtn = Instance.new("TextButton")
     keyBtn.Size                 = UDim2.new(1, 0, 1, 0)
     keyBtn.BackgroundTransparency = 1
@@ -1199,42 +1200,42 @@ local function NewSearchPanel(searchTabData, opts)
     selLabel.TextXAlignment       = Enum.TextXAlignment.Left
     selLabel.TextTruncate         = Enum.TextTruncate.AtEnd
     selLabel.Parent               = bottomPanel
-    -- ── Etiqueta "Cantidad:" ─────────────────────────────────────
-    local amountTag = Instance.new("TextLabel")
-    amountTag.Size                 = UDim2.new(0, 60, 0, 14)
-    amountTag.Position             = UDim2.new(0, 8, 0, 26)
-    amountTag.BackgroundTransparency = 1
-    amountTag.Text                 = "Cantidad:"
-    amountTag.TextColor3           = T.TextDim
-    amountTag.TextSize             = 11
-    amountTag.Font                 = Enum.Font.Gotham
-    amountTag.TextXAlignment       = Enum.TextXAlignment.Left
-    amountTag.Parent               = bottomPanel
-
-    -- ── TextBox para escribir la cantidad directamente ────────────
-    local amountBg = Instance.new("Frame")
-    amountBg.Size             = UDim2.new(0, 90, 0, 26)
-    amountBg.Position         = UDim2.new(0, 8, 0, 40)
-    amountBg.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    amountBg.BorderSizePixel  = 0
-    amountBg.Parent           = bottomPanel
-    Corner(amountBg, 4)
-    Stroke(amountBg, T.BorderDim, 1)
-
-    local amountBox = Instance.new("TextBox")
-    amountBox.Size                 = UDim2.new(1, -10, 1, 0)
-    amountBox.Position             = UDim2.new(0, 5, 0, 0)
-    amountBox.BackgroundTransparency = 1
-    amountBox.BorderSizePixel      = 0
-    amountBox.Text                 = "1"
-    amountBox.PlaceholderText      = "Cantidad"
-    amountBox.PlaceholderColor3    = T.TextDim
-    amountBox.TextColor3           = T.Text
-    amountBox.TextSize             = 13
-    amountBox.Font                 = Enum.Font.GothamBold
-    amountBox.TextXAlignment       = Enum.TextXAlignment.Center
-    amountBox.ClearTextOnFocus     = false
-    amountBox.Parent               = amountBg
+    local minusBtn = Instance.new("TextButton")
+    minusBtn.Size             = UDim2.new(0, 26, 0, 26)
+    minusBtn.Position         = UDim2.new(0, 8, 0, 28)
+    minusBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    minusBtn.BorderSizePixel  = 0
+    minusBtn.Text             = "−"
+    minusBtn.TextColor3       = T.Accent
+    minusBtn.TextSize         = 16
+    minusBtn.Font             = Enum.Font.GothamBold
+    minusBtn.AutoButtonColor  = false
+    minusBtn.Parent           = bottomPanel
+    Corner(minusBtn, 4)
+    -- minusBtn color fijo
+    local amountLabel = Instance.new("TextLabel")
+    amountLabel.Size                 = UDim2.new(0, 40, 0, 26)
+    amountLabel.Position             = UDim2.new(0, 38, 0, 28)
+    amountLabel.BackgroundTransparency = 1
+    amountLabel.Text                 = "1"
+    amountLabel.TextColor3           = T.Text
+    amountLabel.TextSize             = 13
+    amountLabel.Font                 = Enum.Font.GothamBold
+    amountLabel.TextXAlignment       = Enum.TextXAlignment.Center
+    amountLabel.Parent               = bottomPanel
+    local plusBtn = Instance.new("TextButton")
+    plusBtn.Size             = UDim2.new(0, 26, 0, 26)
+    plusBtn.Position         = UDim2.new(0, 82, 0, 28)
+    plusBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    plusBtn.BorderSizePixel  = 0
+    plusBtn.Text             = "+"
+    plusBtn.TextColor3       = T.Accent
+    plusBtn.TextSize         = 16
+    plusBtn.Font             = Enum.Font.GothamBold
+    plusBtn.AutoButtonColor  = false
+    plusBtn.Parent           = bottomPanel
+    Corner(plusBtn, 4)
+    -- plusBtn color fijo
     local sendBtn = Instance.new("TextButton")
     sendBtn.Size             = UDim2.new(0, 110, 0, 26)
     sendBtn.Position         = UDim2.new(1, -118, 0, 28)
@@ -1322,27 +1323,17 @@ local function NewSearchPanel(searchTabData, opts)
     searchBox:GetPropertyChangedSignal("Text"):Connect(function()
         BuildList(searchBox.Text)
     end)
-    -- Actualiza selectedAmount cuando el usuario escribe en el TextBox
-    amountBox:GetPropertyChangedSignal("Text"):Connect(function()
-        -- Solo permitir dígitos
-        local clean = amountBox.Text:gsub("[^%d]", "")
-        if clean ~= amountBox.Text then
-            amountBox.Text = clean
-        end
-        local n = tonumber(clean)
-        if n and n >= 1 then
-            selectedAmount = math.floor(n)
-        elseif clean == "" then
-            selectedAmount = 1
+    minusBtn.MouseButton1Click:Connect(function()
+        if selectedAmount > 1 then
+            selectedAmount -= 1
+            amountLabel.Text = tostring(selectedAmount)
         end
     end)
-    -- Al perder foco, normalizar el texto
-    amountBox.FocusLost:Connect(function()
-        local n = tonumber(amountBox.Text)
-        if not n or n < 1 then n = 1 end
-        n = math.floor(n)
-        selectedAmount  = n
-        amountBox.Text  = tostring(n)
+    plusBtn.MouseButton1Click:Connect(function()
+        if selectedAmount < 999 then
+            selectedAmount += 1
+            amountLabel.Text = tostring(selectedAmount)
+        end
     end)
     sendBtn.MouseButton1Click:Connect(function()
         if not selectedWeapon then return end
@@ -1373,6 +1364,96 @@ UserInputService.InputChanged:Connect(function(inp)
         )
     end
 end)
+
+-- ── Notification System ─────────────────────────────────────────────
+local _notifGui = Instance.new("ScreenGui")
+_notifGui.Name            = "iDepHubNotifs"
+_notifGui.ResetOnSpawn    = false
+_notifGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
+_notifGui.DisplayOrder    = 1000
+_notifGui.Parent          = playerGui
+
+local _notifOffset = 0
+local _notifSlots  = {}
+
+local function sendNotification(title, text, duration)
+    -- Apila hasta 4 notificaciones
+    local slotY = -80 - (_notifOffset * 70)
+    _notifOffset = _notifOffset + 1
+
+    local card = Instance.new("Frame")
+    card.Size                   = UDim2.new(0, 300, 0, 60)
+    card.Position               = UDim2.new(1, 10, 1, slotY)
+    card.BackgroundColor3       = Color3.fromRGB(5, 5, 5)
+    card.BackgroundTransparency = 0.05
+    card.BorderSizePixel        = 0
+    card.ZIndex                 = 100
+    card.Parent                 = _notifGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 9)
+    corner.Parent       = card
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color        = T.Accent
+    stroke.Thickness    = 1.4
+    stroke.Transparency = 0.25
+    stroke.Parent       = card
+    table.insert(_accentObjs, {stroke, "Color"})
+
+    local accent = Instance.new("Frame")
+    accent.Size             = UDim2.new(0, 3, 1, -16)
+    accent.Position         = UDim2.new(0, 8, 0, 8)
+    accent.BackgroundColor3 = T.Accent
+    accent.BorderSizePixel  = 0
+    accent.ZIndex           = 101
+    accent.Parent           = card
+    table.insert(_accentObjs, {accent, "BackgroundColor3"})
+    Instance.new("UICorner", accent).CornerRadius = UDim.new(1, 0)
+
+    local titleL = Instance.new("TextLabel")
+    titleL.Size               = UDim2.new(1, -26, 0, 24)
+    titleL.Position           = UDim2.new(0, 20, 0, 8)
+    titleL.BackgroundTransparency = 1
+    titleL.Text               = title
+    titleL.TextColor3         = Color3.fromRGB(240, 240, 240)
+    titleL.TextSize           = 14
+    titleL.Font               = Enum.Font.GothamBold
+    titleL.TextXAlignment     = Enum.TextXAlignment.Left
+    titleL.ZIndex             = 102
+    titleL.Parent             = card
+
+    local textL = Instance.new("TextLabel")
+    textL.Size                = UDim2.new(1, -26, 0, 20)
+    textL.Position            = UDim2.new(0, 20, 0, 33)
+    textL.BackgroundTransparency = 1
+    textL.Text                = text
+    textL.TextColor3          = Color3.fromRGB(170, 170, 170)
+    textL.TextSize            = 12
+    textL.Font                = Enum.Font.Gotham
+    textL.TextXAlignment      = Enum.TextXAlignment.Left
+    textL.TextWrapped         = true
+    textL.ZIndex              = 102
+    textL.Parent              = card
+
+    -- Slide in
+    TweenService:Create(card, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -316, 1, slotY)
+    }):Play()
+
+    task.delay(math.max(duration or 2, 0.8), function()
+        local tw = TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, 10, 1, slotY),
+            BackgroundTransparency = 1,
+        })
+        tw:Play()
+        tw.Completed:Connect(function()
+            card:Destroy()
+            _notifOffset = math.max(0, _notifOffset - 1)
+        end)
+    end)
+end
+
 return {
     titleLabel      = titleLabel,
     setAccentColor  = setAccentColor,
@@ -1388,5 +1469,6 @@ return {
     NewSearchPanel  = NewSearchPanel,
     SelectTab       = SelectTab,
     registeredTabs  = registeredTabs,
-    mainFrame       = mainFrame,
+    mainFrame        = mainFrame,
+    sendNotification = sendNotification,
 }
