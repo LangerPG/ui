@@ -1115,8 +1115,10 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
     return container
 end
 local function NewSearchPanel(searchTabData, opts)
-    local getWeapons = opts and opts.getWeapons
-    local onSend     = opts and opts.onSend
+    local getWeapons   = opts and opts.getWeapons
+    local onSend       = opts and opts.onSend
+    local hideAmount   = opts and opts.hideAmount
+    local buttonLabel  = (opts and opts.buttonLabel) or "Enviar arma"
     local selectedWeapon  = nil
     local selectedAmount  = 1
     local weaponRowFrames = {}
@@ -1135,7 +1137,8 @@ local function NewSearchPanel(searchTabData, opts)
     searchBarBg.BorderSizePixel  = 0
     searchBarBg.Parent           = searchOuter
     Corner(searchBarBg, 6)
-    Stroke(searchBarBg, T.Border, 1)
+    local _sbStroke = Stroke(searchBarBg, T.Border, 1)
+    _regAcc(_sbStroke, "Color")
     local searchIcon = Instance.new("TextLabel")
     searchIcon.Size                 = UDim2.new(0, 28, 1, 0)
     searchIcon.BackgroundTransparency = 1
@@ -1170,7 +1173,7 @@ local function NewSearchPanel(searchTabData, opts)
     listFrame.Parent                = searchOuter
     _regAcc(listFrame, "ScrollBarImageColor3")
     Corner(listFrame, 6)
-    Stroke(listFrame, T.BorderDim, 1)
+    local _lfStroke = Stroke(listFrame, T.BorderDim, 1)
     local listLayout = Instance.new("UIListLayout")
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
     listLayout.Padding   = UDim.new(0, 2)
@@ -1241,7 +1244,7 @@ local function NewSearchPanel(searchTabData, opts)
     sendBtn.Position         = UDim2.new(1, -118, 0, 28)
     sendBtn.BackgroundColor3 = T.AccentDark
     sendBtn.BorderSizePixel  = 0
-    sendBtn.Text             = "Enviar arma"
+    sendBtn.Text             = buttonLabel
     sendBtn.TextColor3       = Color3.fromRGB(230, 230, 230)
     sendBtn.TextSize         = 12
     sendBtn.Font             = Enum.Font.GothamSemibold
@@ -1339,6 +1342,14 @@ local function NewSearchPanel(searchTabData, opts)
         if not selectedWeapon then return end
         if onSend then onSend(selectedWeapon, selectedAmount) end
     end)
+    -- Ocultar selector de cantidad si hideAmount = true
+    if hideAmount then
+        minusBtn.Visible    = false
+        amountLabel.Visible = false
+        plusBtn.Visible     = false
+        sendBtn.Size        = UDim2.new(1, -16, 0, 26)
+        sendBtn.Position    = UDim2.new(0, 8, 0, 28)
+    end
     searchTabData.customPanel   = searchOuter
     searchTabData.onTabSelected = function() BuildList(searchBox.Text) end
 end
