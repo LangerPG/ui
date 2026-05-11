@@ -2,6 +2,133 @@ local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players          = game:GetService("Players")
 local LocalPlayer      = Players.LocalPlayer
+
+-- ── Lucide Icons ──────────────────────────────────────────────────────
+-- Mapea nombres de lucide.dev a rbxassetid de Roblox.
+-- Sube tus SVGs como Decal en Roblox y pega el ID aquí.
+-- Si el ID es 0 el ícono se oculta limpiamente (sin texto roto).
+local LucideIcons = {
+    -- Shots / Combat
+    ["crosshair"]        = 0,
+    ["crosshair-2"]      = 0,
+    ["target"]           = 0,
+    ["aim"]              = 0,
+    ["swords"]           = 0,
+    ["zap"]              = 0,
+    ["zap-off"]          = 0,
+    ["shield"]           = 0,
+    ["shield-off"]       = 0,
+    ["shield-check"]     = 0,
+    ["bullet"]           = 0,
+    -- Vision / ESP
+    ["eye"]              = 0,
+    ["eye-off"]          = 0,
+    ["scan"]             = 0,
+    ["scan-eye"]         = 0,
+    ["radar"]            = 0,
+    ["binoculars"]       = 0,
+    -- Automation / Bot
+    ["bot"]              = 0,
+    ["cpu"]              = 0,
+    ["binary"]           = 0,
+    ["circuit-board"]    = 0,
+    ["terminal"]         = 0,
+    -- Detection
+    ["circle-dot"]       = 0,
+    ["circle"]           = 0,
+    ["dot"]              = 0,
+    ["focus"]            = 0,
+    -- Tools / Config
+    ["wrench"]           = 0,
+    ["settings"]         = 0,
+    ["settings-2"]       = 0,
+    ["sliders"]          = 0,
+    ["sliders-horizontal"]= 0,
+    ["tool"]             = 0,
+    ["hammer"]           = 0,
+    ["pen-tool"]         = 0,
+    -- Info / UI
+    ["info"]             = 0,
+    ["help-circle"]      = 0,
+    ["alert-circle"]     = 0,
+    ["alert-triangle"]   = 0,
+    ["badge-info"]       = 0,
+    -- Server / Network
+    ["server"]           = 0,
+    ["network"]          = 0,
+    ["globe"]            = 0,
+    ["wifi"]             = 0,
+    ["link"]             = 0,
+    ["share-2"]          = 0,
+    ["clipboard"]        = 0,
+    ["copy"]             = 0,
+    ["external-link"]    = 0,
+    -- Player / User
+    ["user"]             = 0,
+    ["users"]            = 0,
+    ["user-check"]       = 0,
+    ["skull"]            = 0,
+    ["ghost"]            = 0,
+    -- Navigation / General
+    ["home"]             = 0,
+    ["star"]             = 0,
+    ["heart"]            = 0,
+    ["lock"]             = 0,
+    ["unlock"]           = 0,
+    ["key"]              = 0,
+    ["layers"]           = 0,
+    ["layout"]           = 0,
+    ["maximize"]         = 0,
+    ["minimize"]         = 0,
+    ["minus"]            = 0,
+    ["plus"]             = 0,
+    ["x"]                = 0,
+    ["check"]            = 0,
+    ["activity"]         = 0,
+    ["trending-up"]      = 0,
+    ["trending-down"]    = 0,
+}
+
+-- Registra un ícono Lucide en tiempo de ejecución.
+-- Uso: UI.registerIcon("crosshair", 1234567890)
+local function registerIcon(name, assetId)
+    LucideIcons[name] = assetId
+end
+
+-- Resuelve un parámetro `icon` de NewTab al asset ID correcto (o nil).
+-- Retorna: (id_string | nil, isImage: bool)
+local function resolveIcon(icon)
+    if icon == nil or icon == "" then
+        return nil, false
+    end
+    -- Número directo → rbxassetid
+    if type(icon) == "number" then
+        return tostring(icon), true
+    end
+    if type(icon) == "string" then
+        -- Nombre Lucide registrado
+        local lucideId = LucideIcons[icon]
+        if lucideId ~= nil then
+            if lucideId ~= 0 then
+                return tostring(lucideId), true
+            else
+                -- Nombre reconocido pero sin ID → ocultar limpiamente
+                return nil, false
+            end
+        end
+        -- "1234567890" o "rbxassetid://1234567890"
+        if icon:match("^%d+$") then
+            return icon, true
+        end
+        if icon:match("^rbxassetid://") then
+            return icon:gsub("rbxassetid://", ""), true
+        end
+        -- String desconocido → NO renderizar como texto (evita texto roto)
+        return nil, false
+    end
+    return nil, false
+end
+
 local T = {
     Bg          = Color3.fromRGB(0,   0,   0),
     Sidebar     = Color3.fromRGB(0,   0,   0),
@@ -161,7 +288,6 @@ footerLabel.Font                  = Enum.Font.GothamSemibold
 footerLabel.TextXAlignment        = Enum.TextXAlignment.Center
 footerLabel.ZIndex                = 6
 footerLabel.Parent                = footer
--- footerLabel usa TextRed fijo
 local sidebar = Instance.new("Frame")
 sidebar.Name             = "Sidebar"
 sidebar.Size             = UDim2.new(0, 118, 1, 0)
@@ -218,6 +344,13 @@ local function SelectTab(target)
     end
     if target.onTabSelected then target.onTabSelected() end
 end
+
+-- ── NewTab ─────────────────────────────────────────────────────────────
+-- icon puede ser:
+--   string  → nombre Lucide (ej. "crosshair", "eye", "bot")
+--   number  → rbxassetid directo
+--   string  → "1234567890" o "rbxassetid://1234567890"
+--   ""      → sin ícono
 local function NewTab(name, icon, order)
     local btn = Instance.new("TextButton")
     btn.Name             = "Tab_"..name
@@ -229,6 +362,7 @@ local function NewTab(name, icon, order)
     btn.LayoutOrder      = order
     btn.Parent           = sidebar
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
     local accentBar = Instance.new("Frame")
     accentBar.Name             = "Accent"
     accentBar.Size             = UDim2.new(0, 3, 0, 20)
@@ -239,35 +373,32 @@ local function NewTab(name, icon, order)
     accentBar.Parent           = btn
     Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
     _regAcc(accentBar, "BackgroundColor3")
-    local iconIsImage = (type(icon) == "number") or
-                        (type(icon) == "string" and (icon:match("^%d+$") or icon:match("^rbxassetid://")))
-    local hasVisibleIcon = iconIsImage or (type(icon) == "string" and icon ~= "")
-    if iconIsImage then
-        local rawId = type(icon) == "number" and tostring(icon)
-                      or (icon:match("^%d+$") and icon or icon:gsub("rbxassetid://",""))
+
+    -- ── Resolución del ícono ──────────────────────────────────────────
+    local rawId, iconIsImage = resolveIcon(icon)
+    local hasVisibleIcon     = iconIsImage and rawId ~= nil
+
+    local iconImgRef = nil  -- referencia para el tween de color activo/inactivo
+
+    if hasVisibleIcon then
         local iconImg = Instance.new("ImageLabel")
-        iconImg.Size                 = UDim2.new(0, 18, 0, 18)
-        iconImg.Position             = UDim2.new(0, 10, 0.5, -9)
+        iconImg.Size                 = UDim2.new(0, 16, 0, 16)
+        iconImg.Position             = UDim2.new(0, 11, 0.5, -8)
         iconImg.BackgroundTransparency = 1
         iconImg.Image                = "rbxassetid://" .. rawId
         iconImg.ImageColor3          = T.TextDim
         iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.ZIndex               = 2
         iconImg.Parent               = btn
-    elseif type(icon) == "string" and icon ~= "" then
-        local iconLbl = Instance.new("TextLabel")
-        iconLbl.Size                 = UDim2.new(0, 22, 1, 0)
-        iconLbl.Position             = UDim2.new(0, 9, 0, 0)
-        iconLbl.BackgroundTransparency = 1
-        iconLbl.Text                 = icon
-        iconLbl.TextSize             = 15
-        iconLbl.Font                 = Enum.Font.GothamSemibold
-        iconLbl.TextXAlignment       = Enum.TextXAlignment.Center
-        iconLbl.Parent               = btn
+        iconImgRef = iconImg
     end
+    -- (sin fallback a TextLabel para nombres Lucide no registrados)
+
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Name                 = "Label"
-    nameLbl.Size                 = hasVisibleIcon and UDim2.new(1, -36, 1, 0) or UDim2.new(1, -14, 1, 0)
-    nameLbl.Position             = hasVisibleIcon and UDim2.new(0, 35, 0, 0) or UDim2.new(0, 10, 0, 0)
+    -- Si hay ícono: desplaza el texto a la derecha; si no, texto completo
+    nameLbl.Size     = hasVisibleIcon and UDim2.new(1, -34, 1, 0) or UDim2.new(1, -14, 1, 0)
+    nameLbl.Position = hasVisibleIcon and UDim2.new(0, 33, 0, 0)  or UDim2.new(0, 10, 0, 0)
     nameLbl.BackgroundTransparency = 1
     nameLbl.Text                 = name
     nameLbl.TextColor3           = T.TextDim
@@ -275,7 +406,9 @@ local function NewTab(name, icon, order)
     nameLbl.Font                 = Enum.Font.GothamSemibold
     nameLbl.TextXAlignment       = Enum.TextXAlignment.Left
     nameLbl.TextTruncate         = Enum.TextTruncate.AtEnd
+    nameLbl.ZIndex               = 2
     nameLbl.Parent               = btn
+
     local page = Instance.new("ScrollingFrame")
     page.Size                  = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
@@ -297,8 +430,16 @@ local function NewTab(name, icon, order)
     pagePad.PaddingLeft   = UDim.new(0, 9)
     pagePad.PaddingRight  = UDim.new(0, 10)
     pagePad.Parent        = page
-    local tabData = {btn = btn, accent = accentBar, nameLbl = nameLbl, page = page, iconImg = iconIsImage and btn:FindFirstChildOfClass("ImageLabel") or nil}
+
+    local tabData = {
+        btn        = btn,
+        accent     = accentBar,
+        nameLbl    = nameLbl,
+        page       = page,
+        iconImg    = iconImgRef,   -- nil si no hay ícono (sin crash)
+    }
     table.insert(registeredTabs, tabData)
+
     btn.MouseButton1Click:Connect(function() SelectTab(tabData) end)
     btn.MouseEnter:Connect(function()
         if page.Visible or (tabData.customPanel and tabData.customPanel.Visible) then return end
@@ -310,6 +451,7 @@ local function NewTab(name, icon, order)
     end)
     return page, tabData
 end
+
 local _ord = 0
 local function nextOrd() _ord += 1; return _ord end
 local function Stroke(parent, color, thickness)
@@ -357,7 +499,6 @@ local function NewSection(parent, title)
     hdrTxt.Font              = Enum.Font.GothamSemibold
     hdrTxt.TextXAlignment    = Enum.TextXAlignment.Left
     hdrTxt.Parent            = hdr
-    -- hdrTxt color fijo, no cambia con accent
     local hdrLine = Instance.new("Frame")
     hdrLine.Size             = UDim2.new(1, 0, 0, 1)
     hdrLine.Position         = UDim2.new(0, 0, 1, -1)
@@ -511,7 +652,6 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback)
     valLbl.Font              = Enum.Font.GothamSemibold
     valLbl.TextXAlignment    = Enum.TextXAlignment.Right
     valLbl.Parent            = f
-    -- valLbl color fijo
     local trackBg = Instance.new("Frame")
     trackBg.Size             = UDim2.new(1, -20, 0, 6)
     trackBg.Position         = UDim2.new(0, 10, 1, -16)
@@ -604,7 +744,6 @@ local function NewButton(parent, label, sub, callback)
     arrow.TextSize          = 22
     arrow.Font              = Enum.Font.GothamSemibold
     arrow.Parent            = f
-    -- arrow color fijo
     local btn = Instance.new("TextButton")
     btn.Size                 = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
@@ -733,7 +872,6 @@ local function NewKeybind(parent, label, sub, defaultKey, callback)
     keyLbl.TextSize             = 11
     keyLbl.Font                 = Enum.Font.GothamSemibold
     keyLbl.Parent               = keyBg
-    -- keyLbl color fijo
     local keyBtn = Instance.new("TextButton")
     keyBtn.Size                 = UDim2.new(1, 0, 1, 0)
     keyBtn.BackgroundTransparency = 1
@@ -1215,7 +1353,6 @@ local function NewSearchPanel(searchTabData, opts)
     minusBtn.AutoButtonColor  = false
     minusBtn.Parent           = bottomPanel
     Corner(minusBtn, 4)
-    -- minusBtn color fijo
     local amountLabel = Instance.new("TextLabel")
     amountLabel.Size                 = UDim2.new(0, 40, 0, 26)
     amountLabel.Position             = UDim2.new(0, 38, 0, 28)
@@ -1238,7 +1375,6 @@ local function NewSearchPanel(searchTabData, opts)
     plusBtn.AutoButtonColor  = false
     plusBtn.Parent           = bottomPanel
     Corner(plusBtn, 4)
-    -- plusBtn color fijo
     local sendBtn = Instance.new("TextButton")
     sendBtn.Size             = UDim2.new(0, 110, 0, 26)
     sendBtn.Position         = UDim2.new(1, -118, 0, 28)
@@ -1342,7 +1478,6 @@ local function NewSearchPanel(searchTabData, opts)
         if not selectedWeapon then return end
         if onSend then onSend(selectedWeapon, selectedAmount) end
     end)
-    -- Ocultar selector de cantidad si hideAmount = true
     if hideAmount then
         minusBtn.Visible    = false
         amountLabel.Visible = false
@@ -1376,7 +1511,7 @@ UserInputService.InputChanged:Connect(function(inp)
     end
 end)
 
--- ── Notification System ─────────────────────────────────────────────
+-- ── Notification System ──────────────────────────────────────────────
 local _notifGui = Instance.new("ScreenGui")
 _notifGui.Name            = "iDepHubNotifs"
 _notifGui.ResetOnSpawn    = false
@@ -1388,7 +1523,6 @@ local _notifOffset = 0
 local _notifSlots  = {}
 
 local function sendNotification(title, text, duration)
-    -- Apila hasta 4 notificaciones
     local slotY = -80 - (_notifOffset * 70)
     _notifOffset = _notifOffset + 1
 
@@ -1447,7 +1581,6 @@ local function sendNotification(title, text, duration)
     textL.ZIndex              = 102
     textL.Parent              = card
 
-    -- Slide in
     TweenService:Create(card, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Position = UDim2.new(1, -316, 1, slotY)
     }):Play()
@@ -1466,20 +1599,22 @@ local function sendNotification(title, text, duration)
 end
 
 return {
-    titleLabel      = titleLabel,
-    setAccentColor  = setAccentColor,
-    NewTab          = NewTab,
-    NewSection      = NewSection,
-    NewToggle       = NewToggle,
-    NewSlider       = NewSlider,
-    NewButton       = NewButton,
-    NewInput        = NewInput,
-    NewKeybind      = NewKeybind,
-    NewLabel        = NewLabel,
-    NewColorPicker  = NewColorPicker,
-    NewSearchPanel  = NewSearchPanel,
-    SelectTab       = SelectTab,
-    registeredTabs  = registeredTabs,
+    titleLabel       = titleLabel,
+    setAccentColor   = setAccentColor,
+    registerIcon     = registerIcon,      -- ← NUEVO: registra un ícono en runtime
+    LucideIcons      = LucideIcons,       -- ← NUEVO: tabla editable directamente
+    NewTab           = NewTab,
+    NewSection       = NewSection,
+    NewToggle        = NewToggle,
+    NewSlider        = NewSlider,
+    NewButton        = NewButton,
+    NewInput         = NewInput,
+    NewKeybind       = NewKeybind,
+    NewLabel         = NewLabel,
+    NewColorPicker   = NewColorPicker,
+    NewSearchPanel   = NewSearchPanel,
+    SelectTab        = SelectTab,
+    registeredTabs   = registeredTabs,
     mainFrame        = mainFrame,
     sendNotification = sendNotification,
 }
