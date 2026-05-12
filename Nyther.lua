@@ -1859,27 +1859,17 @@ end
 --   BODY PART SELECTOR (desplegable, estilo ColorPicker)
 -- ══════════════════════════════════════════════════════════════════
 local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, defaultParts, extRefreshTable, iconName)
-    -- ┌──────────────────────────────────────────────────────────┐
-    -- │  CONSTANTES DE LAYOUT — editá estos valores a tu gusto   │
-    -- │  RH_ROW : alto de cada botón (px)                        │
-    -- │  RG     : gap vertical entre filas (px)                  │
-    -- │  LW     : ancho de botones de brazos/manos (px)          │
-    -- │  CW     : ancho de botones de torso/centro (px)          │
-    -- │  CG     : gap horizontal entre columnas (px)              │
-    -- │  PAD    : padding interno del panel (px)                  │
-    -- │  ABH    : alto de los botones de acción (px)              │
-    -- └──────────────────────────────────────────────────────────┘
-    local RH_ROW  = 36   -- era 32
-    local RG      = 7    -- era 8
-    local LW      = 64   -- era 48  → brazos más anchos
-    local CW      = 100  -- era 76  → LT/UT bien visibles
-    local CG      = 6    -- era 5
+    local RH_ROW  = 32
+    local RG      = 8
+    local LW      = 48
+    local CW      = 76
+    local CG      = 5
     local PAD     = 12
-    local ABH     = 28   -- era 26
+    local ABH     = 26
     local legW    = math.floor((CW - CG) / 2)
 
-    local TOTAL_INNER_W = LW + CG + CW + CG + LW   -- 64+6+100+6+64 = 240
-    local CONTENT_W     = TOTAL_INNER_W + PAD * 2   -- 240+24 = 264
+    local TOTAL_INNER_W = LW + CG + CW + CG + LW   -- 182
+    local CONTENT_W     = TOTAL_INNER_W + PAD * 2   -- 206
 
     local ROWS   = 7
     local function rowY(r) return PAD + (r - 1) * (RH_ROW + RG) end
@@ -2043,7 +2033,7 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
         btn.Size            = UDim2.new(0, w, 0, h)
         btn.Position        = UDim2.new(0, x, 0, y)
         btn.Text            = btnLabel
-        btn.TextSize        = 11
+        btn.TextSize        = 10
         btn.Font            = Enum.Font.GothamBold
         btn.BorderSizePixel = 0
         btn.AutoButtonColor = false
@@ -2119,7 +2109,7 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
         ab.Size             = UDim2.new(0, ABW, 0, ABH)
         ab.Position         = UDim2.new(0, x, 0, AB_Y)
         ab.Text             = btnLabel
-        ab.TextSize         = 11
+        ab.TextSize         = 10
         ab.Font             = Enum.Font.GothamSemibold
         ab.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         ab.TextColor3       = T.Accent
