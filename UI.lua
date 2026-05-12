@@ -5,95 +5,144 @@ local LocalPlayer      = Players.LocalPlayer
 
 local LucideIcons = {
     -- Shots / Combat
-    ["crosshair"]        = 0,
-    ["crosshair-2"]      = 0,
-    ["target"]           = 0,
-    ["aim"]              = 0,
-    ["swords"]           = 0,
-    ["zap"]              = 0,
-    ["zap-off"]          = 0,
-    ["shield"]           = 0,
-    ["shield-off"]       = 0,
-    ["shield-check"]     = 0,
-    ["bullet"]           = 0,
+    ["crosshair"]           = 0,
+    ["crosshair-2"]         = 0,
+    ["target"]              = 0,
+    ["aim"]                 = 0,
+    ["swords"]              = 0,
+    ["zap"]                 = 0,
+    ["zap-off"]             = 0,
+    ["shield"]              = 0,
+    ["shield-off"]          = 0,
+    ["shield-check"]        = 0,
+    ["bullet"]              = 0,
     -- Vision / ESP
-    ["eye"]              = 0,
-    ["eye-off"]          = 0,
-    ["scan"]             = 0,
-    ["scan-eye"]         = 0,
-    ["radar"]            = 0,
-    ["binoculars"]       = 0,
+    ["eye"]                 = 0,
+    ["eye-off"]             = 0,
+    ["scan"]                = 0,
+    ["scan-eye"]            = 0,
+    ["radar"]               = 0,
+    ["binoculars"]          = 0,
     -- Automation / Bot
-    ["bot"]              = 0,
-    ["cpu"]              = 0,
-    ["binary"]           = 0,
-    ["circuit-board"]    = 0,
-    ["terminal"]         = 0,
+    ["bot"]                 = 0,
+    ["cpu"]                 = 0,
+    ["binary"]              = 0,
+    ["circuit-board"]       = 0,
+    ["terminal"]            = 0,
     -- Detection
-    ["circle-dot"]       = 0,
-    ["circle"]           = 0,
-    ["dot"]              = 0,
-    ["focus"]            = 0,
+    ["circle-dot"]          = 0,
+    ["circle"]              = 0,
+    ["dot"]                 = 0,
+    ["focus"]               = 0,
     -- Tools / Config
-    ["wrench"]           = 0,
-    ["settings"]         = 0,
-    ["settings-2"]       = 0,
-    ["sliders"]          = 0,
-    ["sliders-horizontal"]= 0,
-    ["tool"]             = 0,
-    ["hammer"]           = 0,
-    ["pen-tool"]         = 0,
+    ["wrench"]              = 0,
+    ["settings"]            = 0,
+    ["settings-2"]          = 0,
+    ["sliders"]             = 0,
+    ["sliders-horizontal"]  = 0,
+    ["tool"]                = 0,
+    ["hammer"]              = 0,
+    ["pen-tool"]            = 0,
     -- Info / UI
-    ["info"]             = 0,
-    ["help-circle"]      = 0,
-    ["alert-circle"]     = 0,
-    ["alert-triangle"]   = 0,
-    ["badge-info"]       = 0,
+    ["info"]                = 0,
+    ["help-circle"]         = 0,
+    ["alert-circle"]        = 0,
+    ["alert-triangle"]      = 0,
+    ["badge-info"]          = 0,
     -- Server / Network
-    ["server"]           = 0,
-    ["network"]          = 0,
-    ["globe"]            = 0,
-    ["wifi"]             = 0,
-    ["link"]             = 0,
-    ["share-2"]          = 0,
-    ["clipboard"]        = 0,
-    ["copy"]             = 0,
-    ["external-link"]    = 0,
+    ["server"]              = 0,
+    ["network"]             = 0,
+    ["globe"]               = 0,
+    ["wifi"]                = 0,
+    ["link"]                = 0,
+    ["share-2"]             = 0,
+    ["clipboard"]           = 0,
+    ["copy"]                = 0,
+    ["external-link"]       = 0,
     -- Player / User
-    ["user"]             = 0,
-    ["users"]            = 0,
-    ["user-check"]       = 0,
-    ["skull"]            = 0,
-    ["ghost"]            = 0,
-    ["home"]             = 0,
-    ["star"]             = 0,
-    ["heart"]            = 0,
-    ["lock"]             = 0,
-    ["unlock"]           = 0,
-    ["key"]              = 0,
-    ["layers"]           = 0,
-    ["layout"]           = 0,
-    ["maximize"]         = 0,
-    ["minimize"]         = 0,
-    ["minus"]            = 0,
-    ["plus"]             = 0,
-    ["x"]                = 0,
-    ["check"]            = 0,
-    ["activity"]         = 0,
-    ["trending-up"]      = 0,
-    ["trending-down"]    = 0,
+    ["user"]                = 0,
+    ["users"]               = 0,
+    ["user-check"]          = 0,
+    ["skull"]               = 0,
+    ["ghost"]               = 0,
+    ["home"]                = 0,
+    ["star"]                = 0,
+    ["heart"]               = 0,
+    ["lock"]                = 0,
+    ["unlock"]              = 0,
+    ["key"]                 = 0,
+    ["layers"]              = 0,
+    ["layout"]              = 0,
+    ["maximize"]            = 0,
+    ["minimize"]            = 0,
+    ["minus"]               = 0,
+    ["plus"]                = 0,
+    ["x"]                   = 0,
+    ["check"]               = 0,
+    ["activity"]            = 0,
+    ["trending-up"]         = 0,
+    ["trending-down"]       = 0,
 }
 
-local function registerIcon(name, assetId)
-    LucideIcons[name] = assetId
+-- Registra un icono individual.
+-- assetData puede ser:
+--   número      → asset ID individual   (rbxassetid://N)
+--   tabla       → spritesheet           { id=N, ox=offsetX, oy=offsetY }
+local function registerIcon(name, assetData)
+    LucideIcons[name] = assetData
 end
 
+-- Registra múltiples iconos desde una tabla.
+-- Acepta tanto IDs planos como tablas de spritesheet.
 local function registerIcons(tbl)
-    for name, id in pairs(tbl) do
-        LucideIcons[name] = tonumber(id) or id
+    for name, data in pairs(tbl) do
+        if type(data) == "table" then
+            LucideIcons[name] = data          -- spritesheet: {id,ox,oy}
+        else
+            LucideIcons[name] = tonumber(data) or data
+        end
     end
 end
 
+-- Inicializa los iconos Lucide desde el módulo oficial de latte-soft.
+--
+--   local Lucide = require(path.to.lucide-roblox)  -- require del módulo
+--   UI.initLucideModule(Lucide)
+--
+-- Esto carga automáticamente todos los iconos disponibles (1500+) usando
+-- Lucide.GetAllAssets(48), que usa los spritesheets de 48px de Roblox.
+local function initLucideModule(lucideModule)
+    if not lucideModule or not lucideModule.GetAllAssets then
+        warn("[NytherUI] initLucideModule: módulo inválido o sin GetAllAssets")
+        return false
+    end
+    local ok, allAssets = pcall(lucideModule.GetAllAssets, lucideModule, 48)
+    if not ok or type(allAssets) ~= "table" then
+        -- Algunos builds usan GetAllAssets como función libre, no método
+        ok, allAssets = pcall(lucideModule.GetAllAssets, 48)
+    end
+    if not ok or type(allAssets) ~= "table" then
+        warn("[NytherUI] initLucideModule: error al obtener assets:", allAssets)
+        return false
+    end
+    local count = 0
+    for _, asset in pairs(allAssets) do
+        if asset.IconName and asset.Id and asset.ImageRectOffset then
+            LucideIcons[asset.IconName] = {
+                id = asset.Id,
+                ox = asset.ImageRectOffset.X,
+                oy = asset.ImageRectOffset.Y,
+            }
+            count += 1
+        end
+    end
+    return count > 0
+end
+
+-- Carga un pack de iconos desde una URL que devuelve JSON.
+-- El JSON debe tener el formato:
+--   { "icon-name": assetId, ... }              ← IDs individuales
+--   { "icon-name": {id=N,ox=X,oy=Y}, ... }    ← spritesheet
 local function tryLoadIconPack(url)
     local hs = game:GetService("HttpService")
     local function decode(body)
@@ -119,61 +168,105 @@ local function normIconName(name)
     return name:lower():gsub("_", "-"):gsub("%s+", "-")
 end
 
+-- resolveIcon(icon) → rawId, isImage, rectOffset, rectSize
+--
+--   rawId      : string con el asset ID (o URL), nil si no hay icono válido
+--   isImage    : bool
+--   rectOffset : Vector2 para spritesheet (nil si es asset individual)
+--   rectSize   : Vector2 para spritesheet (nil si es asset individual)
+--
+-- Los dos últimos valores solo vienen cuando el icono proviene del
+-- spritesheet de latte-soft/lucide-roblox.
 local function resolveIcon(icon)
-    if icon == nil or icon == "" then return nil, false end
+    if icon == nil or icon == "" then return nil, false, nil, nil end
 
+    -- Número directo → asset individual
     if type(icon) == "number" then
-        if icon > 0 then return tostring(icon), true end
-        return nil, false
+        if icon > 0 then return tostring(icon), true, nil, nil end
+        return nil, false, nil, nil
     end
 
     if type(icon) == "string" then
+        -- URL directa
         if icon:match("^https?://") then
-            return icon, true
+            return icon, true, nil, nil
         end
-        local key = normIconName(icon)
+
+        -- Buscar en la tabla de Lucide
+        local key      = normIconName(icon)
         local lucideId = LucideIcons[key] or LucideIcons[icon]
+
         if lucideId ~= nil then
-            if type(lucideId) == "number" then
-                if lucideId > 0 then return tostring(lucideId), true end
-                return nil, false  
-            elseif type(lucideId) == "string" then
-                if lucideId:match("^%d+$") and tonumber(lucideId) > 0 then
-                    return lucideId, true
-                elseif lucideId:match("^https?://") then
-                    return lucideId, true
+            -- ── Formato spritesheet: { id=N, ox=X, oy=Y } ──
+            if type(lucideId) == "table" then
+                local id = lucideId.id
+                if type(id) == "number" and id > 0 then
+                    return tostring(id), true,
+                           Vector2.new(lucideId.ox or 0, lucideId.oy or 0),
+                           Vector2.new(48, 48)
                 end
-                return nil, false
+                return nil, false, nil, nil
+            end
+            -- ── Formato número (asset individual) ──
+            if type(lucideId) == "number" then
+                if lucideId > 0 then return tostring(lucideId), true, nil, nil end
+                return nil, false, nil, nil
+            end
+            -- ── Formato string ──
+            if type(lucideId) == "string" then
+                if lucideId:match("^%d+$") and tonumber(lucideId) > 0 then
+                    return lucideId, true, nil, nil
+                elseif lucideId:match("^https?://") then
+                    return lucideId, true, nil, nil
+                end
+                return nil, false, nil, nil
             end
         end
+
+        -- String numérico directo
         if icon:match("^%d+$") then
-            return icon, true
+            return icon, true, nil, nil
         end
 
+        -- rbxassetid://
         if icon:match("^rbxassetid://") then
             local id = icon:gsub("rbxassetid://", "")
-            if id ~= "" and id ~= "0" then return id, true end
-            return nil, false
+            if id ~= "" and id ~= "0" then return id, true, nil, nil end
+            return nil, false, nil, nil
         end
 
-        -- String desconocido → silencio (no texto roto)
-        return nil, false
+        -- Desconocido → silencio
+        return nil, false, nil, nil
     end
 
-    return nil, false
+    return nil, false, nil, nil
 end
 
-local function MakeIconImg(parent, rawId, size, posX, posY, color, zindex)
+-- MakeIconImg(parent, rawId, size, posX, posY, color, zindex, rectOffset, rectSize)
+--
+--   rectOffset : Vector2 — posición del icono dentro del spritesheet (opcional)
+--   rectSize   : Vector2 — tamaño del icono en el spritesheet         (opcional)
+--
+-- Si se pasan rectOffset/rectSize, se configuran ImageRectOffset/ImageRectSize
+-- para recortar correctamente el spritesheet de latte-soft/lucide-roblox.
+local function MakeIconImg(parent, rawId, size, posX, posY, color, zindex, rectOffset, rectSize)
     if rawId == nil then return nil end
     local img = Instance.new("ImageLabel")
-    img.Size                 = UDim2.new(0, size, 0, size)
-    img.Position             = UDim2.new(0, posX, 0.5, -math.floor(size / 2))
+    img.Size                   = UDim2.new(0, size, 0, size)
+    img.Position               = UDim2.new(0, posX, 0.5, -math.floor(size / 2))
     img.BackgroundTransparency = 1
-    img.Image                = rawId:match("^https?://") and rawId or ("rbxassetid://" .. rawId)
-    img.ImageColor3          = color or Color3.fromRGB(80, 80, 80)
-    img.ScaleType            = Enum.ScaleType.Fit
-    img.ZIndex               = zindex or 2
-    img.Parent               = parent
+    img.Image                  = rawId:match("^https?://") and rawId or ("rbxassetid://" .. rawId)
+    img.ImageColor3            = color or Color3.fromRGB(80, 80, 80)
+    img.ZIndex                 = zindex or 2
+    img.Parent                 = parent
+    -- Spritesheet: recortar la porción correcta del icono
+    if rectOffset and rectSize then
+        img.ScaleType        = Enum.ScaleType.Crop
+        img.ImageRectOffset  = rectOffset
+        img.ImageRectSize    = rectSize
+    else
+        img.ScaleType        = Enum.ScaleType.Fit
+    end
     return img
 end
 
@@ -416,10 +509,10 @@ local function NewTab(name, icon, order)
     Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
     _regAcc(accentBar, "BackgroundColor3")
 
-    local rawId, iconIsImage = resolveIcon(icon)
-    local hasVisibleIcon     = iconIsImage and rawId ~= nil
+    local rawId, iconIsImage, rectOffset, rectSize = resolveIcon(icon)
+    local hasVisibleIcon = iconIsImage and rawId ~= nil
 
-    local iconImgRef = hasVisibleIcon and MakeIconImg(btn, rawId, 16, 11, 0, T.TextDim, 2) or nil
+    local iconImgRef = hasVisibleIcon and MakeIconImg(btn, rawId, 16, 11, 0, T.TextDim, 2, rectOffset, rectSize) or nil
 
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Name                 = "Label"
@@ -537,12 +630,12 @@ end
 local function NewToggle(parent, label, sub, default, callback, icon)
     local f, stroke = ElemBase(parent, 46)
 
-    local rawId, iconIsImage = resolveIcon(icon)
+    local rawId, iconIsImage, rectOffset, rectSize = resolveIcon(icon)
     local hasIcon = iconIsImage and rawId ~= nil
     local txtX    = hasIcon and 36 or 10
 
     if hasIcon then
-        MakeIconImg(f, rawId, 16, 11, 0, T.TextDim, 2)
+        MakeIconImg(f, rawId, 16, 11, 0, T.TextDim, 2, rectOffset, rectSize)
     end
 
     local lbl = Instance.new("TextLabel")
@@ -749,12 +842,12 @@ end
 local function NewButton(parent, label, sub, callback, icon)
     local f, stroke = ElemBase(parent, 46)
 
-    local rawId, iconIsImage = resolveIcon(icon)
+    local rawId, iconIsImage, rectOffset, rectSize = resolveIcon(icon)
     local hasIcon = iconIsImage and rawId ~= nil
     local txtX    = hasIcon and 36 or 10          -- offset horizontal del texto
 
     if hasIcon then
-        MakeIconImg(f, rawId, 16, 11, 0, T.TextDim, 2)
+        MakeIconImg(f, rawId, 16, 11, 0, T.TextDim, 2, rectOffset, rectSize)
     end
 
     local lbl = Instance.new("TextLabel")
@@ -1645,10 +1738,11 @@ end
 return {
     titleLabel       = titleLabel,
     setAccentColor   = setAccentColor,
-    registerIcon     = registerIcon,      
-    registerIcons    = registerIcons,     
-    tryLoadIconPack  = tryLoadIconPack,   
-    LucideIcons      = LucideIcons,       
+    registerIcon     = registerIcon,
+    registerIcons    = registerIcons,
+    initLucideModule = initLucideModule,
+    tryLoadIconPack  = tryLoadIconPack,
+    LucideIcons      = LucideIcons,
     NewTab           = NewTab,
     NewSection       = NewSection,
     NewToggle        = NewToggle,         
