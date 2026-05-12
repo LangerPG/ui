@@ -45,6 +45,7 @@ local T = {
 
 local _accentObjs = {}
 local _accentDarkObjs = {}
+local _customAccentCallbacks = {}
 local function _regAcc(o, p)  table.insert(_accentObjs,     {o, p}) end
 local function _regDark(o, p) table.insert(_accentDarkObjs, {o, p}) end
 
@@ -56,6 +57,7 @@ local function setAccentColor(color)
     T.AccentDark = Color3.new(color.R * 0.55, color.G * 0.55, color.B * 0.55)
     for _, e in ipairs(_accentObjs)     do pcall(function() e[1][e[2]] = color          end) end
     for _, e in ipairs(_accentDarkObjs) do pcall(function() e[1][e[2]] = T.AccentDark   end) end
+    for _, fn in ipairs(_customAccentCallbacks) do pcall(fn) end
 end
 
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -1854,23 +1856,355 @@ local function sendNotification(title, text, duration)
 end
 
 -- ══════════════════════════════════════════════════════════════════
+--   BODY PART SELECTOR (desplegable, estilo ColorPicker)
+-- ══════════════════════════════════════════════════════════════════
+local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, defaultParts, extRefreshTable, iconName)
+    local RH_ROW  = 32
+    local RG      = 8
+    local LW      = 48
+    local CW      = 76
+    local CG      = 5
+    local PAD     = 12
+    local ABH     = 26
+    local legW    = math.floor((CW - CG) / 2)
+
+    local TOTAL_INNER_W = LW + CG + CW + CG + LW   -- 182
+    local CONTENT_W     = TOTAL_INNER_W + PAD * 2   -- 206
+
+    local ROWS   = 7
+    local function rowY(r) return PAD + (r - 1) * (RH_ROW + RG) end
+    local SEP_Y  = rowY(ROWS + 1) - 4
+    local AB_Y   = SEP_Y + 8
+    local BODY_H = AB_Y + ABH + PAD
+
+    -- ── contenedor externo ──
+    local container = Instance.new("Frame")
+    container.Size               = UDim2.new(1, 0, 0, 0)
+    container.AutomaticSize      = Enum.AutomaticSize.Y
+    container.BackgroundTransparency = 1
+    container.LayoutOrder        = nextOrd()
+    container.Parent             = parent
+
+    local cLayout = Instance.new("UIListLayout")
+    cLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    cLayout.Padding   = UDim.new(0, 0)
+    cLayout.Parent    = container
+
+    -- ── header (colapsable) ──
+    local header = Instance.new("Frame")
+    header.Size             = UDim2.new(1, 0, 0, 46)
+    header.BackgroundColor3 = T.Elem
+    header.BorderSizePixel  = 0
+    header.LayoutOrder      = 1
+    header.Parent           = container
+    Corner(header, 4)
+    local hStroke = Stroke(header, T.BorderDim, 1)
+
+    local labelOffset = 10
+    if iconName then
+        local asset = getLucideAsset(iconName)
+        if asset then
+            local img = Instance.new("ImageLabel")
+            img.Size               = UDim2.new(0, 16, 0, 16)
+            img.Position           = UDim2.new(0, 10, 0, 9)
+            img.BackgroundTransparency = 1
+            img.Image              = asset.Url
+            img.ImageRectSize      = asset.ImageRectSize
+            img.ImageRectOffset    = asset.ImageRectOffset
+            img.ScaleType          = Enum.ScaleType.Fit
+            img.ImageColor3        = T.Accent
+            img.Parent             = header
+            _regAcc(img, "ImageColor3")
+            labelOffset = 30
+        end
+    end
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size              = UDim2.new(1, -70, 0, 18)
+    lbl.Position          = UDim2.new(0, labelOffset, 0, 7)
+    lbl.BackgroundTransparency = 1
+    lbl.Text              = label
+    lbl.TextColor3        = T.Text
+    lbl.TextSize          = 13
+    lbl.Font              = Enum.Font.GothamBold
+    lbl.TextXAlignment    = Enum.TextXAlignment.Left
+    lbl.TextTruncate      = Enum.TextTruncate.AtEnd
+    lbl.Parent            = header
+
+    local subLbl = Instance.new("TextLabel")
+    subLbl.Size           = UDim2.new(1, -70, 0, 12)
+    subLbl.Position       = UDim2.new(0, labelOffset, 0, 26)
+    subLbl.BackgroundTransparency = 1
+    subLbl.Text           = sub
+    subLbl.TextColor3     = T.TextDim
+    subLbl.TextSize       = 10
+    subLbl.Font           = Enum.Font.Gotham
+    subLbl.TextXAlignment = Enum.TextXAlignment.Left
+    subLbl.TextTruncate   = Enum.TextTruncate.AtEnd
+    subLbl.Parent         = header
+
+    -- badge con conteo de partes seleccionadas
+    local badgeBg = Instance.new("Frame")
+    badgeBg.Size             = UDim2.new(0, 36, 0, 28)
+    badgeBg.Position         = UDim2.new(1, -46, 0, 9)
+    badgeBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    badgeBg.BorderSizePixel  = 0
+    badgeBg.Parent           = header
+    Corner(badgeBg, 4)
+    Stroke(badgeBg, T.BorderDim, 1)
+
+    local countLbl = Instance.new("TextLabel")
+    countLbl.Size                 = UDim2.new(1, 0, 1, 0)
+    countLbl.BackgroundTransparency = 1
+    countLbl.TextColor3           = T.Accent
+    countLbl.Text                 = "0"
+    countLbl.TextSize             = 13
+    countLbl.Font                 = Enum.Font.GothamBold
+    countLbl.TextXAlignment       = Enum.TextXAlignment.Center
+    countLbl.Parent               = badgeBg
+    _regAcc(countLbl, "TextColor3")
+
+    -- ── body (colapsable) ──
+    local body = Instance.new("Frame")
+    body.Size             = UDim2.new(1, 0, 0, BODY_H)
+    body.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+    body.BorderSizePixel  = 0
+    body.ClipsDescendants = true
+    body.Visible          = false
+    body.LayoutOrder      = 2
+    body.Parent           = container
+    Corner(body, 4)
+
+    -- holder centrado
+    local ch = Instance.new("Frame")
+    ch.Size        = UDim2.new(0, CONTENT_W, 1, 0)
+    ch.AnchorPoint = Vector2.new(0.5, 0)
+    ch.Position    = UDim2.new(0.5, 0, 0, 0)
+    ch.BackgroundTransparency = 1
+    ch.Parent      = body
+
+    local lx       = PAD
+    local cx       = lx + LW + CG
+    local rx       = cx + CW + CG
+    local cxCenter = cx + math.floor(CW / 2)
+
+    -- ── conectores decorativos (detrás de los botones) ──
+    local function makeDeco(x, y, w, h)
+        local d = Instance.new("Frame")
+        d.Size             = UDim2.new(0, w, 0, h)
+        d.Position         = UDim2.new(0, x, 0, y)
+        d.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        d.BorderSizePixel  = 0
+        d.Parent           = ch
+        Corner(d, 1)
+        return d
+    end
+
+    -- Cuello (head → UT)
+    makeDeco(cxCenter - 1, rowY(1) + RH_ROW, 2, RG)
+    -- Columna vertebral (UT top → LT bottom)
+    makeDeco(cxCenter - 1, rowY(2), 2, RH_ROW + RG + RH_ROW)
+    -- Conector cintura → piernas
+    makeDeco(cxCenter - 1, rowY(3) + RH_ROW, 2, RG)
+    -- Hombro izquierdo
+    makeDeco(lx + LW, rowY(2) + math.floor(RH_ROW / 2) - 1, CG, 2)
+    -- Hombro derecho
+    makeDeco(cx + CW, rowY(2) + math.floor(RH_ROW / 2) - 1, CG, 2)
+    -- Codo izquierdo
+    makeDeco(lx + LW, rowY(3) + math.floor(RH_ROW / 2) - 1, CG, 2)
+    -- Codo derecho
+    makeDeco(cx + CW, rowY(3) + math.floor(RH_ROW / 2) - 1, CG, 2)
+
+    -- ── lógica de partes ──
+    local localRefreshFns = {}
+
+    local function countSelected()
+        local n = 0
+        for _, p in ipairs(allParts) do if selectedParts[p] then n += 1 end end
+        return n
+    end
+
+    local function updateCount()
+        countLbl.Text = tostring(countSelected())
+    end
+
+    local function makePartBtn(btnLabel, partName, x, y, w, h, mirrorPart)
+        local btn = Instance.new("TextButton")
+        btn.Size            = UDim2.new(0, w, 0, h)
+        btn.Position        = UDim2.new(0, x, 0, y)
+        btn.Text            = btnLabel
+        btn.TextSize        = 10
+        btn.Font            = Enum.Font.GothamBold
+        btn.BorderSizePixel = 0
+        btn.AutoButtonColor = false
+        btn.Parent          = ch
+        Corner(btn, 6)
+        local bStroke = Stroke(btn, T.BorderDim, 1)
+
+        local function refresh()
+            if selectedParts[partName] then
+                btn.BackgroundColor3 = T.Accent
+                btn.TextColor3       = Color3.fromRGB(0, 0, 0)
+                bStroke.Color        = T.AccentDark
+            else
+                btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                btn.TextColor3       = T.Accent
+                bStroke.Color        = T.BorderDim
+            end
+        end
+        refresh()
+        localRefreshFns[partName] = refresh
+        if extRefreshTable then extRefreshTable[partName] = refresh end
+
+        btn.MouseButton1Click:Connect(function()
+            selectedParts[partName] = (not selectedParts[partName]) or nil
+            if mirrorPart then selectedParts[mirrorPart] = selectedParts[partName] end
+            refresh()
+            if mirrorPart and localRefreshFns[mirrorPart] then localRefreshFns[mirrorPart]() end
+            updateCount()
+        end)
+        btn.MouseEnter:Connect(function()
+            if not selectedParts[partName] then
+                TweenService:Create(btn, TweenInfo.new(0.08), {BackgroundColor3 = Color3.fromRGB(14, 14, 14)}):Play()
+            end
+        end)
+        btn.MouseLeave:Connect(function()
+            if not selectedParts[partName] then
+                TweenService:Create(btn, TweenInfo.new(0.08), {BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+            end
+        end)
+    end
+
+    -- ── disposición del muñeco ──
+    makePartBtn("H",   "Head",          cx + math.floor((CW-LW)/2), rowY(1), LW, RH_ROW)
+    makePartBtn("LUA", "LeftUpperArm",  lx, rowY(2), LW, RH_ROW)
+    makePartBtn("UT",  "UpperTorso",    cx, rowY(2), CW, RH_ROW, "Torso")
+    makePartBtn("RUA", "RightUpperArm", rx, rowY(2), LW, RH_ROW)
+    makePartBtn("LLA", "LeftLowerArm",  lx, rowY(3), LW, RH_ROW)
+    makePartBtn("LT",  "LowerTorso",    cx, rowY(3), CW, RH_ROW)
+    makePartBtn("RLA", "RightLowerArm", rx, rowY(3), LW, RH_ROW)
+    makePartBtn("LH",  "LeftHand",      lx, rowY(4), LW, RH_ROW)
+    makePartBtn("RH",  "RightHand",     rx, rowY(4), LW, RH_ROW)
+    makePartBtn("LUL", "LeftUpperLeg",  cx,          rowY(5), legW, RH_ROW)
+    makePartBtn("RUL", "RightUpperLeg", cx+legW+CG,  rowY(5), legW, RH_ROW)
+    makePartBtn("LLL", "LeftLowerLeg",  cx,          rowY(6), legW, RH_ROW)
+    makePartBtn("RLL", "RightLowerLeg", cx+legW+CG,  rowY(6), legW, RH_ROW)
+    makePartBtn("LF",  "LeftFoot",      cx,          rowY(7), legW, RH_ROW)
+    makePartBtn("RF",  "RightFoot",     cx+legW+CG,  rowY(7), legW, RH_ROW)
+
+    -- separador
+    local sep = Instance.new("Frame")
+    sep.Size             = UDim2.new(1, -PAD*2, 0, 1)
+    sep.Position         = UDim2.new(0, PAD, 0, SEP_Y)
+    sep.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    sep.BorderSizePixel  = 0
+    sep.Parent           = ch
+
+    -- botones de acción (negro + texto accent)
+    local ABW      = math.floor((TOTAL_INNER_W - CG * 2) / 3)
+    local abStartX = lx
+
+    local function makeActionBtn(btnLabel, x, callback)
+        local ab = Instance.new("TextButton")
+        ab.Size             = UDim2.new(0, ABW, 0, ABH)
+        ab.Position         = UDim2.new(0, x, 0, AB_Y)
+        ab.Text             = btnLabel
+        ab.TextSize         = 10
+        ab.Font             = Enum.Font.GothamSemibold
+        ab.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        ab.TextColor3       = T.Accent
+        ab.BorderSizePixel  = 0
+        ab.AutoButtonColor  = false
+        ab.Parent           = ch
+        Corner(ab, 5)
+        Stroke(ab, T.BorderDim, 1)
+        _regAcc(ab, "TextColor3")
+
+        ab.MouseEnter:Connect(function()
+            TweenService:Create(ab, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(14, 14, 14)}):Play()
+        end)
+        ab.MouseLeave:Connect(function()
+            TweenService:Create(ab, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+        end)
+        ab.MouseButton1Click:Connect(callback)
+        return ab
+    end
+
+    makeActionBtn("Select All", abStartX, function()
+        for _, p in ipairs(allParts) do selectedParts[p] = true end
+        for _, fn in pairs(localRefreshFns) do fn() end
+        updateCount()
+    end)
+    makeActionBtn("Reset", abStartX + ABW + CG, function()
+        for _, p in ipairs(allParts) do selectedParts[p] = defaultParts[p] or nil end
+        for _, fn in pairs(localRefreshFns) do fn() end
+        updateCount()
+    end)
+    makeActionBtn("Clear All", abStartX + (ABW + CG) * 2, function()
+        for _, p in ipairs(allParts) do selectedParts[p] = nil end
+        for _, fn in pairs(localRefreshFns) do fn() end
+        updateCount()
+    end)
+
+    -- actualizar colores cuando cambia el accent
+    table.insert(_customAccentCallbacks, function()
+        for _, fn in pairs(localRefreshFns) do fn() end
+        updateCount()
+    end)
+
+    -- ── toggle expand / collapse ──
+    local headerBtn = Instance.new("TextButton")
+    headerBtn.Size                 = UDim2.new(1, 0, 1, 0)
+    headerBtn.BackgroundTransparency = 1
+    headerBtn.Text                 = ""
+    headerBtn.Parent               = header
+
+    local expanded = false
+    headerBtn.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        body.Visible = expanded
+        TweenService:Create(header, TweenInfo.new(0.1), {
+            BackgroundColor3 = expanded and T.ElemHov or T.Elem,
+        }):Play()
+        TweenService:Create(hStroke, TweenInfo.new(0.1), {
+            Color = expanded and Color3.fromRGB(48, 48, 48) or T.BorderDim,
+        }):Play()
+    end)
+
+    header.MouseEnter:Connect(function()
+        TweenService:Create(header, TweenInfo.new(0.1), {BackgroundColor3 = T.ElemHov}):Play()
+        TweenService:Create(hStroke, TweenInfo.new(0.1), {Color = Color3.fromRGB(48, 48, 48)}):Play()
+    end)
+    header.MouseLeave:Connect(function()
+        if not expanded then
+            TweenService:Create(header, TweenInfo.new(0.1), {BackgroundColor3 = T.Elem}):Play()
+        end
+        TweenService:Create(hStroke, TweenInfo.new(0.1), {Color = T.BorderDim}):Play()
+    end)
+
+    updateCount()
+    return container
+end
+
+-- ══════════════════════════════════════════════════════════════════
 --   API PÚBLICA
 -- ══════════════════════════════════════════════════════════════════
 return {
-    titleLabel      = titleLabel,
-    setAccentColor  = setAccentColor,
-    NewTab          = NewTab,
-    NewSection      = NewSection,
-    NewToggle       = NewToggle,
-    NewSlider       = NewSlider,
-    NewButton       = NewButton,
-    NewInput        = NewInput,
-    NewKeybind      = NewKeybind,
-    NewLabel        = NewLabel,
-    NewColorPicker  = NewColorPicker,
-    NewSearchPanel  = NewSearchPanel,
-    SelectTab       = SelectTab,
-    registeredTabs  = registeredTabs,
-    mainFrame       = mainFrame,
-    sendNotification = sendNotification,
+    titleLabel           = titleLabel,
+    setAccentColor       = setAccentColor,
+    NewTab               = NewTab,
+    NewSection           = NewSection,
+    NewToggle            = NewToggle,
+    NewSlider            = NewSlider,
+    NewButton            = NewButton,
+    NewInput             = NewInput,
+    NewKeybind           = NewKeybind,
+    NewLabel             = NewLabel,
+    NewColorPicker       = NewColorPicker,
+    NewBodyPartSelector  = NewBodyPartSelector,
+    NewSearchPanel       = NewSearchPanel,
+    SelectTab            = SelectTab,
+    registeredTabs       = registeredTabs,
+    mainFrame            = mainFrame,
+    sendNotification     = sendNotification,
 }
