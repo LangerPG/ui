@@ -290,6 +290,7 @@ local function NewTab(name, icon, order)
     local hasVisibleIcon = false
     local lucideAsset = nil
 
+    -- Intentar Lucide si es string sin formato de asset id
     if type(icon) == "string" and icon ~= "" and not icon:match("^%d+$") and not icon:match("^rbxassetid://") then
         lucideAsset = getLucideAsset(icon)
     end
@@ -912,16 +913,13 @@ local function NewInput(parent, label, placeholder, callback)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   KEYBIND (con icono Lucide)
---   ✅ FIX: currentKey y listening son LOCAL por instancia
---   Antes eran globales → todos los keybinds compartían el mismo
---   estado, causando que ninguno funcionara correctamente.
+--   KEYBIND (con icono Lucide) - CORREGIDO: variables locales
 -- ══════════════════════════════════════════════════════════════════
 local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
-    local currentKey = defaultKey   -- ← FIX: LOCAL por keybind (antes era global)
-    local listening  = false        -- ← FIX: LOCAL por keybind (antes era global)
-
     local f, stroke = ElemBase(parent, 46)
+
+    local listening = false       -- ✅ LOCAL (antes global)
+    local currentKey = defaultKey -- ✅ LOCAL (antes global)
 
     local labelOffset = 10
     if iconName then
@@ -1083,6 +1081,13 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     local INP_Y  = SQ_Y + SQ_H + 10
     local BODY_H = INP_Y + INP_H + 9
 
+    local function toHexStr(c)
+        return string.format("#%02X%02X%02X",
+            math.floor(c.R * 255 + 0.5),
+            math.floor(c.G * 255 + 0.5),
+            math.floor(c.B * 255 + 0.5))
+    end
+
     local function fromHexStr(s)
         s = s:gsub("#", ""):gsub("%s", "")
         if #s ~= 6 then return nil end
@@ -1121,6 +1126,7 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     Corner(header, 4)
     local hStroke = Stroke(header, T.BorderDim, 1)
 
+    -- Icono opcional en el header
     local labelOffset = 10
     if iconName then
         local asset = getLucideAsset(iconName)
@@ -1759,7 +1765,7 @@ UserInputService.InputChanged:Connect(function(inp)
 end)
 
 -- ══════════════════════════════════════════════════════════════════
---   NOTIFICATIONS
+--   NOTIFICACIONES
 -- ══════════════════════════════════════════════════════════════════
 local _notifGui = Instance.new("ScreenGui")
 _notifGui.Name            = "iDepHubNotifs"
@@ -1851,20 +1857,20 @@ end
 --   API PÚBLICA
 -- ══════════════════════════════════════════════════════════════════
 return {
-    titleLabel       = titleLabel,
-    setAccentColor   = setAccentColor,
-    NewTab           = NewTab,
-    NewSection       = NewSection,
-    NewToggle        = NewToggle,
-    NewSlider        = NewSlider,
-    NewButton        = NewButton,
-    NewInput         = NewInput,
-    NewKeybind       = NewKeybind,
-    NewLabel         = NewLabel,
-    NewColorPicker   = NewColorPicker,
-    NewSearchPanel   = NewSearchPanel,
-    SelectTab        = SelectTab,
-    registeredTabs   = registeredTabs,
-    mainFrame        = mainFrame,
+    titleLabel      = titleLabel,
+    setAccentColor  = setAccentColor,
+    NewTab          = NewTab,
+    NewSection      = NewSection,
+    NewToggle       = NewToggle,
+    NewSlider       = NewSlider,
+    NewButton       = NewButton,
+    NewInput        = NewInput,
+    NewKeybind      = NewKeybind,
+    NewLabel        = NewLabel,
+    NewColorPicker  = NewColorPicker,
+    NewSearchPanel  = NewSearchPanel,
+    SelectTab       = SelectTab,
+    registeredTabs  = registeredTabs,
+    mainFrame       = mainFrame,
     sendNotification = sendNotification,
 }
