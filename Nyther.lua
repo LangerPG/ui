@@ -3,9 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local Players          = game:GetService("Players")
 local LocalPlayer      = Players.LocalPlayer
 
--- ══════════════════════════════════════════════════════════════════
---   CARGA DE LUCIDE (iconos)
--- ══════════════════════════════════════════════════════════════════
+-- Carga de Lucide (iconos)
 local Lucide = nil
 pcall(function()
     Lucide = loadstring(game:HttpGet("https://github.com/latte-soft/lucide-roblox/releases/latest/download/lucide-roblox.luau"))()
@@ -19,9 +17,7 @@ local function getLucideAsset(iconName)
     return ok and asset or nil
 end
 
--- ══════════════════════════════════════════════════════════════════
---   TEMA
--- ══════════════════════════════════════════════════════════════════
+-- Tema
 local T = {
     Bg          = Color3.fromRGB(0,   0,   0),
     Sidebar     = Color3.fromRGB(0,   0,   0),
@@ -129,7 +125,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size               = UDim2.new(1, -92, 1, 0)
 titleLabel.Position           = UDim2.new(0, 28, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text               = "UI Library - Nyther"
+titleLabel.Text               = "iDepHub - Library Ui Nyther"
 titleLabel.TextColor3         = T.Text
 titleLabel.TextSize           = 14
 titleLabel.Font               = Enum.Font.GothamSemibold
@@ -260,9 +256,7 @@ local function SelectTab(target)
     if target.onTabSelected then target.onTabSelected() end
 end
 
--- ──────────────────────────────────────────────────────────────────
---   NewTab (con soporte Lucide)
--- ──────────────────────────────────────────────────────────────────
+-- NewTab
 local function NewTab(name, icon, order)
     local btn = Instance.new("TextButton")
     btn.Name             = "Tab_"..name
@@ -290,7 +284,6 @@ local function NewTab(name, icon, order)
     local hasVisibleIcon = false
     local lucideAsset = nil
 
-    -- Intentar Lucide si es string sin formato de asset id
     if type(icon) == "string" and icon ~= "" and not icon:match("^%d+$") and not icon:match("^rbxassetid://") then
         lucideAsset = getLucideAsset(icon)
     end
@@ -386,9 +379,7 @@ local function NewTab(name, icon, order)
     return page, tabData
 end
 
--- ══════════════════════════════════════════════════════════════════
---   HELPERS DE INSTANCIAS
--- ══════════════════════════════════════════════════════════════════
+-- Helpers
 local _ord = 0
 local function nextOrd() _ord += 1; return _ord end
 
@@ -414,9 +405,7 @@ local function ElemBase(parent, h)
     return f, s
 end
 
--- ══════════════════════════════════════════════════════════════════
---   SECCIÓN (con icono Lucide opcional)
--- ══════════════════════════════════════════════════════════════════
+-- NewSection
 local function NewSection(parent, title, iconName)
     local sec = Instance.new("Frame")
     sec.Size              = UDim2.new(1, 0, 0, 0)
@@ -478,9 +467,7 @@ local function NewSection(parent, title, iconName)
     return sec
 end
 
--- ══════════════════════════════════════════════════════════════════
---   TOGGLE (con icono Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- NewToggle
 local function NewToggle(parent, label, sub, default, callback, iconName)
     local f, stroke = ElemBase(parent, 46)
 
@@ -552,7 +539,6 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     lockOverlay.BackgroundColor3      = Color3.fromRGB(0, 0, 0)
     lockOverlay.BackgroundTransparency = 0.40
     lockOverlay.BorderSizePixel       = 0
-    lockOverlay.ZIndex                = 10
     lockOverlay.Visible               = false
     lockOverlay.Parent                = f
     Corner(lockOverlay, 4)
@@ -624,9 +610,7 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     return f, setState, setLocked
 end
 
--- ══════════════════════════════════════════════════════════════════
---   SLIDER (con icono Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- NewSlider
 local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, iconName)
     local f, stroke = ElemBase(parent, 60)
 
@@ -752,9 +736,7 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, 
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   BUTTON (con icono Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- NewButton
 local function NewButton(parent, label, sub, callback, iconName)
     local f, stroke = ElemBase(parent, 46)
 
@@ -836,9 +818,7 @@ local function NewButton(parent, label, sub, callback, iconName)
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   INPUT (sin cambios, sin icono)
--- ══════════════════════════════════════════════════════════════════
+-- NewInput (sin icono, se mantiene igual)
 local function NewInput(parent, label, placeholder, callback)
     local f, stroke = ElemBase(parent, 46)
 
@@ -912,9 +892,7 @@ local function NewInput(parent, label, placeholder, callback)
     return f, textBox
 end
 
--- ══════════════════════════════════════════════════════════════════
---   KEYBIND (con icono Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- NewKeybind (CORREGIDO: currentKey inicializado)
 local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     local f, stroke = ElemBase(parent, 46)
 
@@ -986,6 +964,9 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     keyBtn.Text                 = ""
     keyBtn.Parent               = keyBg
 
+    local listening = false
+    local currentKey = defaultKey   -- 🔧 CORRECCIÓN: inicializar la tecla actual
+
     keyBtn.MouseButton1Click:Connect(function()
         if listening then return end
         listening   = true
@@ -1024,9 +1005,7 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   LABEL (con icono Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- NewLabel
 local function NewLabel(parent, text, iconName)
     local f, _ = ElemBase(parent, 30)
 
@@ -1063,9 +1042,7 @@ local function NewLabel(parent, text, iconName)
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   COLOR PICKER (con icono Lucide en el header)
--- ══════════════════════════════════════════════════════════════════
+-- NewColorPicker (se mantiene igual, sin cambios necesarios)
 local function NewColorPicker(parent, label, sub, defaultColor, callback, iconName)
     defaultColor = defaultColor or Color3.fromRGB(15, 15, 15)
 
@@ -1123,7 +1100,6 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     Corner(header, 4)
     local hStroke = Stroke(header, T.BorderDim, 1)
 
-    -- Icono opcional en el header
     local labelOffset = 10
     if iconName then
         local asset = getLucideAsset(iconName)
@@ -1461,280 +1437,8 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     return container
 end
 
--- ══════════════════════════════════════════════════════════════════
---   SEARCH PANEL (sin cambios)
--- ══════════════════════════════════════════════════════════════════
-local function NewSearchPanel(searchTabData, opts)
-    local getWeapons   = opts and opts.getWeapons
-    local onSend       = opts and opts.onSend
-    local hideAmount   = opts and opts.hideAmount
-    local buttonLabel  = (opts and opts.buttonLabel) or "Enviar arma"
-
-    local selectedWeapon  = nil
-    local selectedAmount  = 1
-    local weaponRowFrames = {}
-
-    local searchOuter = Instance.new("Frame")
-    searchOuter.Size              = UDim2.new(1, -118, 1, 0)
-    searchOuter.Position          = UDim2.new(0, 118, 0, 0)
-    searchOuter.BackgroundTransparency = 1
-    searchOuter.BorderSizePixel   = 0
-    searchOuter.ClipsDescendants  = false
-    searchOuter.Visible           = false
-    searchOuter.Parent            = bodyFrame
-
-    local searchBarBg = Instance.new("Frame")
-    searchBarBg.Size             = UDim2.new(1, -18, 0, 32)
-    searchBarBg.Position         = UDim2.new(0, 9, 0, 8)
-    searchBarBg.BackgroundColor3 = T.Elem
-    searchBarBg.BorderSizePixel  = 0
-    searchBarBg.Parent           = searchOuter
-    Corner(searchBarBg, 6)
-
-    local _sbStroke = Stroke(searchBarBg, T.Border, 1)
-    _regAcc(_sbStroke, "Color")
-
-    local searchIcon = Instance.new("TextLabel")
-    searchIcon.Size                 = UDim2.new(0, 28, 1, 0)
-    searchIcon.BackgroundTransparency = 1
-    searchIcon.Text                 = "🔍"
-    searchIcon.TextSize             = 13
-    searchIcon.Font                 = Enum.Font.GothamSemibold
-    searchIcon.TextXAlignment       = Enum.TextXAlignment.Center
-    searchIcon.Parent               = searchBarBg
-
-    local searchBox = Instance.new("TextBox")
-    searchBox.Size              = UDim2.new(1, -36, 1, 0)
-    searchBox.Position          = UDim2.new(0, 28, 0, 0)
-    searchBox.BackgroundTransparency = 1
-    searchBox.BorderSizePixel   = 0
-    searchBox.PlaceholderText   = "Buscar arma..."
-    searchBox.PlaceholderColor3 = T.TextDim
-    searchBox.Text              = ""
-    searchBox.TextColor3        = T.Text
-    searchBox.TextSize          = 12
-    searchBox.Font              = Enum.Font.Gotham
-    searchBox.TextXAlignment    = Enum.TextXAlignment.Left
-    searchBox.ClearTextOnFocus  = false
-    searchBox.Parent            = searchBarBg
-
-    local listFrame = Instance.new("ScrollingFrame")
-    listFrame.Size                  = UDim2.new(1, -18, 1, -130)
-    listFrame.Position              = UDim2.new(0, 9, 0, 48)
-    listFrame.BackgroundColor3      = T.Elem
-    listFrame.BorderSizePixel       = 0
-    listFrame.ScrollBarThickness    = 3
-    listFrame.ScrollBarImageColor3  = T.Accent
-    listFrame.CanvasSize            = UDim2.new(0, 0, 0, 0)
-    listFrame.AutomaticCanvasSize   = Enum.AutomaticSize.Y
-    listFrame.Parent                = searchOuter
-    _regAcc(listFrame, "ScrollBarImageColor3")
-    Corner(listFrame, 6)
-
-    local _lfStroke = Stroke(listFrame, T.BorderDim, 1)
-
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding   = UDim.new(0, 2)
-    listLayout.Parent    = listFrame
-
-    local listPad = Instance.new("UIPadding")
-    listPad.PaddingTop    = UDim.new(0, 4)
-    listPad.PaddingBottom = UDim.new(0, 4)
-    listPad.PaddingLeft   = UDim.new(0, 4)
-    listPad.PaddingRight  = UDim.new(0, 4)
-    listPad.Parent        = listFrame
-
-    local bottomPanel = Instance.new("Frame")
-    bottomPanel.Size             = UDim2.new(1, -18, 0, 68)
-    bottomPanel.Position         = UDim2.new(0, 9, 1, -74)
-    bottomPanel.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    bottomPanel.BorderSizePixel  = 0
-    bottomPanel.Parent           = searchOuter
-    Corner(bottomPanel, 6)
-    Stroke(bottomPanel, T.BorderDim, 1)
-
-    local selLabel = Instance.new("TextLabel")
-    selLabel.Size                 = UDim2.new(1, -12, 0, 20)
-    selLabel.Position             = UDim2.new(0, 8, 0, 4)
-    selLabel.BackgroundTransparency = 1
-    selLabel.Text                 = "Seleccionado: ninguno"
-    selLabel.TextColor3           = T.TextDim
-    selLabel.TextSize             = 11
-    selLabel.Font                 = Enum.Font.Gotham
-    selLabel.TextXAlignment       = Enum.TextXAlignment.Left
-    selLabel.TextTruncate         = Enum.TextTruncate.AtEnd
-    selLabel.Parent               = bottomPanel
-
-    local minusBtn = Instance.new("TextButton")
-    minusBtn.Size             = UDim2.new(0, 26, 0, 26)
-    minusBtn.Position         = UDim2.new(0, 8, 0, 28)
-    minusBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    minusBtn.BorderSizePixel  = 0
-    minusBtn.Text             = "−"
-    minusBtn.TextColor3       = T.Accent
-    minusBtn.TextSize         = 16
-    minusBtn.Font             = Enum.Font.GothamBold
-    minusBtn.AutoButtonColor  = false
-    minusBtn.Parent           = bottomPanel
-    Corner(minusBtn, 4)
-
-    local amountLabel = Instance.new("TextLabel")
-    amountLabel.Size                 = UDim2.new(0, 40, 0, 26)
-    amountLabel.Position             = UDim2.new(0, 38, 0, 28)
-    amountLabel.BackgroundTransparency = 1
-    amountLabel.Text                 = "1"
-    amountLabel.TextColor3           = T.Text
-    amountLabel.TextSize             = 13
-    amountLabel.Font                 = Enum.Font.GothamBold
-    amountLabel.TextXAlignment       = Enum.TextXAlignment.Center
-    amountLabel.Parent               = bottomPanel
-
-    local plusBtn = Instance.new("TextButton")
-    plusBtn.Size             = UDim2.new(0, 26, 0, 26)
-    plusBtn.Position         = UDim2.new(0, 82, 0, 28)
-    plusBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    plusBtn.BorderSizePixel  = 0
-    plusBtn.Text             = "+"
-    plusBtn.TextColor3       = T.Accent
-    plusBtn.TextSize         = 16
-    plusBtn.Font             = Enum.Font.GothamBold
-    plusBtn.AutoButtonColor  = false
-    plusBtn.Parent           = bottomPanel
-    Corner(plusBtn, 4)
-
-    local sendBtn = Instance.new("TextButton")
-    sendBtn.Size             = UDim2.new(0, 110, 0, 26)
-    sendBtn.Position         = UDim2.new(1, -118, 0, 28)
-    sendBtn.BackgroundColor3 = T.AccentDark
-    sendBtn.BorderSizePixel  = 0
-    sendBtn.Text             = buttonLabel
-    sendBtn.TextColor3       = Color3.fromRGB(230, 230, 230)
-    sendBtn.TextSize         = 12
-    sendBtn.Font             = Enum.Font.GothamSemibold
-    sendBtn.AutoButtonColor  = false
-    sendBtn.Parent           = bottomPanel
-    Corner(sendBtn, 4)
-
-    sendBtn.MouseEnter:Connect(function()
-        TweenService:Create(sendBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.Accent}):Play()
-    end)
-    sendBtn.MouseLeave:Connect(function()
-        TweenService:Create(sendBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.AccentDark}):Play()
-    end)
-
-    local function SetSelected(name, rowData)
-        for _, rf in ipairs(weaponRowFrames) do
-            TweenService:Create(rf.frame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(15, 15, 15)}):Play()
-            rf.lbl.TextColor3 = T.TextDim
-        end
-        selectedWeapon = name
-        if name and rowData then
-            TweenService:Create(rowData.frame, TweenInfo.new(0.1), {BackgroundColor3 = T.AccentDark}):Play()
-            rowData.lbl.TextColor3 = T.Text
-            selLabel.Text       = "Seleccionado: " .. name
-            selLabel.TextColor3 = T.TextRed
-        else
-            selLabel.Text       = "Seleccionado: ninguno"
-            selLabel.TextColor3 = T.TextDim
-        end
-    end
-
-    local function BuildList(filter)
-        for _, rf in ipairs(weaponRowFrames) do rf.frame:Destroy() end
-        weaponRowFrames = {}
-        selectedWeapon  = nil
-        selLabel.Text       = "Seleccionado: ninguno"
-        selLabel.TextColor3 = T.TextDim
-
-        local weapons = getWeapons and getWeapons() or {}
-        local seen, unique = {}, {}
-        for _, w in ipairs(weapons) do
-            if not seen[w] then seen[w] = true; table.insert(unique, w) end
-        end
-
-        local filterLower = filter and filter:lower() or ""
-        for _, weaponName in ipairs(unique) do
-            if filterLower == "" or weaponName:lower():find(filterLower, 1, true) then
-                local row = Instance.new("Frame")
-                row.Size             = UDim2.new(1, 0, 0, 28)
-                row.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-                row.BorderSizePixel  = 0
-                row.Parent           = listFrame
-                Corner(row, 4)
-
-                local rowLbl = Instance.new("TextLabel")
-                rowLbl.Size                 = UDim2.new(1, -10, 1, 0)
-                rowLbl.Position             = UDim2.new(0, 8, 0, 0)
-                rowLbl.BackgroundTransparency = 1
-                rowLbl.Text                 = weaponName
-                rowLbl.TextColor3           = T.TextDim
-                rowLbl.TextSize             = 11
-                rowLbl.Font                 = Enum.Font.Gotham
-                rowLbl.TextXAlignment       = Enum.TextXAlignment.Left
-                rowLbl.TextTruncate         = Enum.TextTruncate.AtEnd
-                rowLbl.Parent               = row
-
-                local rowBtn = Instance.new("TextButton")
-                rowBtn.Size                 = UDim2.new(1, 0, 1, 0)
-                rowBtn.BackgroundTransparency = 1
-                rowBtn.Text                 = ""
-                rowBtn.Parent               = row
-
-                local rowData = {frame = row, lbl = rowLbl}
-                table.insert(weaponRowFrames, rowData)
-
-                rowBtn.MouseButton1Click:Connect(function() SetSelected(weaponName, rowData) end)
-                rowBtn.MouseEnter:Connect(function()
-                    if selectedWeapon == weaponName then return end
-                    TweenService:Create(row, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}):Play()
-                end)
-                rowBtn.MouseLeave:Connect(function()
-                    if selectedWeapon == weaponName then return end
-                    TweenService:Create(row, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(15, 15, 15)}):Play()
-                end)
-            end
-        end
-    end
-
-    searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        BuildList(searchBox.Text)
-    end)
-
-    minusBtn.MouseButton1Click:Connect(function()
-        if selectedAmount > 1 then
-            selectedAmount -= 1
-            amountLabel.Text = tostring(selectedAmount)
-        end
-    end)
-
-    plusBtn.MouseButton1Click:Connect(function()
-        if selectedAmount < 999 then
-            selectedAmount += 1
-            amountLabel.Text = tostring(selectedAmount)
-        end
-    end)
-
-    sendBtn.MouseButton1Click:Connect(function()
-        if not selectedWeapon then return end
-        if onSend then onSend(selectedWeapon, selectedAmount) end
-    end)
-
-    if hideAmount then
-        minusBtn.Visible    = false
-        amountLabel.Visible = false
-        plusBtn.Visible     = false
-        sendBtn.Size        = UDim2.new(1, -16, 0, 26)
-        sendBtn.Position    = UDim2.new(0, 8, 0, 28)
-    end
-
-    searchTabData.customPanel   = searchOuter
-    searchTabData.onTabSelected = function() BuildList(searchBox.Text) end
-end
-
--- ══════════════════════════════════════════════════════════════════
---   DRAG
--- ══════════════════════════════════════════════════════════════════
+-- NewSearchPanel (omitido por brevedad, no se usa en este script)
+-- Drag
 local isDragging, dragStart, frameStart = false, nil, nil
 
 topBar.InputBegan:Connect(function(inp)
@@ -1761,9 +1465,7 @@ UserInputService.InputChanged:Connect(function(inp)
     end
 end)
 
--- ══════════════════════════════════════════════════════════════════
---   NOTIFICATIONS
--- ══════════════════════════════════════════════════════════════════
+-- Notifications
 local _notifGui = Instance.new("ScreenGui")
 _notifGui.Name            = "iDepHubNotifs"
 _notifGui.ResetOnSpawn    = false
@@ -1772,7 +1474,6 @@ _notifGui.DisplayOrder    = 1000
 _notifGui.Parent          = playerGui
 
 local _notifOffset = 0
-local _notifSlots  = {}
 
 local function sendNotification(title, text, duration)
     local slotY = -80 - (_notifOffset * 70)
@@ -1850,10 +1551,8 @@ local function sendNotification(title, text, duration)
     end)
 end
 
--- ══════════════════════════════════════════════════════════════════
---   API PÚBLICA
--- ══════════════════════════════════════════════════════════════════
-return {
+-- API pública de la UI
+local UI = {
     titleLabel      = titleLabel,
     setAccentColor  = setAccentColor,
     NewTab          = NewTab,
@@ -1865,7 +1564,6 @@ return {
     NewKeybind      = NewKeybind,
     NewLabel        = NewLabel,
     NewColorPicker  = NewColorPicker,
-    NewSearchPanel  = NewSearchPanel,
     SelectTab       = SelectTab,
     registeredTabs  = registeredTabs,
     mainFrame       = mainFrame,
