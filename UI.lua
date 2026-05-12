@@ -1,52 +1,12 @@
 -- ╔═══════════════════════════════════════════════════════════════╗
--- ║         iDepHub UI Library  —  By LangerPG  |  v2.2           ║
--- ║         Con soporte de iconos Lucide + mejoras de Nyther      ║
+-- ║         Nyther UI v2 + Lucide Icons (Full Integration)       ║
+-- ║         Con soporte de iconos Rayfield/Lucide/emojis         ║
 -- ╚═══════════════════════════════════════════════════════════════╝
 
--- ══════════════════════════════════════════════════════════════════
---   SERVICIOS
--- ══════════════════════════════════════════════════════════════════
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players          = game:GetService("Players")
 local LocalPlayer      = Players.LocalPlayer
-
--- ══════════════════════════════════════════════════════════════════
---   CARGA DE LUCIDE-ROBLOX (sin cambios, igual que en v1)
--- ══════════════════════════════════════════════════════════════════
-local Lucide = nil
-pcall(function()
-    Lucide = loadstring(game:HttpGet(
-        "https://github.com/latte-soft/lucide-roblox/releases/latest/download/lucide-roblox.luau"
-    ))()
-end)
-
-local function getLucideAsset(iconName)
-    if not Lucide then return nil end
-    local ok, asset = pcall(function()
-        return Lucide.GetAsset(iconName, 48)
-    end)
-    return ok and asset or nil
-end
-
-local function makeIconImage(iconName, size, parent)
-    local asset = getLucideAsset(iconName)
-    if not asset then return nil end
-    local img = Instance.new("ImageLabel")
-    img.Size                  = UDim2.new(0, size, 0, size)
-    img.BackgroundTransparency = 1
-    img.Image                 = asset.Url
-    img.ImageRectSize         = asset.ImageRectSize
-    img.ImageRectOffset       = asset.ImageRectOffset
-    img.ScaleType             = Enum.ScaleType.Fit
-    img.ImageColor3           = Color3.fromRGB(95, 95, 95)
-    if parent then img.Parent = parent end
-    return img
-end
-
--- ══════════════════════════════════════════════════════════════════
---   TEMA (con soporte para cambio dinámico de acento)
--- ══════════════════════════════════════════════════════════════════
 local T = {
     Bg          = Color3.fromRGB(8,   8,   8),
     Sidebar     = Color3.fromRGB(4,   4,   4),
@@ -68,15 +28,201 @@ local T = {
     TabInactive = Color3.fromRGB(9,   9,   9),
 }
 
--- Registro de objetos para cambio dinámico de color acento
 local _accentObjs = {}
 local _accentDarkObjs = {}
 local function _regAcc(o, p)  table.insert(_accentObjs,     {o, p}) end
 local function _regDark(o, p) table.insert(_accentDarkObjs, {o, p}) end
 
--- ══════════════════════════════════════════════════════════════════
---   SCREEN GUI
--- ══════════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════════════
+--  LUCIDE ICON SYSTEM (Rayfield CDN + fallback)
+-- ════════════════════════════════════════════════════════════════
+local _Icons = nil
+
+local _FALLBACK_ICONS = {
+    ["server"]          = {15269177520,  {48,48}, {0,  771}},
+    ["sword"]           = {15269177520,  {48,48}, {0,  819}},
+    ["shield"]          = {15269177520,  {48,48}, {0,  675}},
+    ["star"]            = {15269177520,  {48,48}, {0,  819}},
+    ["home"]            = {15269177520,  {48,48}, {0,  387}},
+    ["settings"]        = {15269177520,  {48,48}, {0,  627}},
+    ["user"]            = {15269177520,  {48,48}, {0,  915}},
+    ["zap"]             = {15269177520,  {48,48}, {0,  1011}},
+    ["crosshair"]       = {15269177520,  {48,48}, {0,  147}},
+    ["eye"]             = {15269177520,  {48,48}, {0,  243}},
+    ["eye-off"]         = {15269177520,  {48,48}, {0,  291}},
+    ["lock"]            = {15269177520,  {48,48}, {0,  483}},
+    ["check"]           = {15269177520,  {48,48}, {0,   51}},
+    ["x"]               = {15269177520,  {48,48}, {0,  963}},
+    ["plus"]            = {15269177520,  {48,48}, {0,  579}},
+    ["minus"]           = {15269177520,  {48,48}, {0,  531}},
+    ["trash"]           = {15269177520,  {48,48}, {0,  915}},
+    ["copy"]            = {15269177520,  {48,48}, {0,  147}},
+    ["search"]          = {15269177520,  {48,48}, {0,  627}},
+    ["filter"]          = {15269177520,  {48,48}, {0,  291}},
+    ["bell"]            = {15269177520,  {48,48}, {0,   51}},
+    ["send"]            = {15269177520,  {48,48}, {0,  627}},
+    ["download"]        = {15269177520,  {48,48}, {0,  195}},
+    ["upload"]          = {15269177520,  {48,48}, {0,  867}},
+    ["play"]            = {15269177520,  {48,48}, {0,  579}},
+    ["pause"]           = {15269177520,  {48,48}, {0,  531}},
+    ["heart"]           = {15269177520,  {48,48}, {0,  363}},
+    ["flag"]            = {15269177520,  {48,48}, {0,  291}},
+    ["bookmark"]        = {15269177520,  {48,48}, {0,   75}},
+    ["link"]            = {15269177520,  {48,48}, {0,  483}},
+    ["code"]            = {15269177520,  {48,48}, {0,  123}},
+    ["terminal"]        = {15269177520,  {48,48}, {0,  867}},
+    ["cpu"]             = {15269177520,  {48,48}, {0,  147}},
+    ["wifi"]            = {15269177520,  {48,48}, {0,  963}},
+    ["globe"]           = {15269177520,  {48,48}, {0,  339}},
+    ["database"]        = {15269177520,  {48,48}, {0,  195}},
+    ["package"]         = {15269177520,  {48,48}, {0,  531}},
+    ["layers"]          = {15269177520,  {48,48}, {0,  435}},
+    ["activity"]        = {15269177520,  {48,48}, {0,    3}},
+    ["bar-chart"]       = {15269177520,  {48,48}, {0,   51}},
+    ["dollar-sign"]     = {15269177520,  {48,48}, {0,  195}},
+    ["gift"]            = {15269177520,  {48,48}, {0,  339}},
+    ["crown"]           = {15269177520,  {48,48}, {0,  147}},
+    ["flame"]           = {15269177520,  {48,48}, {0,  291}},
+    ["skull"]           = {15269177520,  {48,48}, {0,  723}},
+    ["ghost"]           = {15269177520,  {48,48}, {0,  339}},
+    ["bug"]             = {15269177520,  {48,48}, {0,   75}},
+    ["wand"]            = {15269177520,  {48,48}, {0,  939}},
+    ["sparkles"]        = {15269177520,  {48,48}, {0,  771}},
+    ["moon"]            = {15269177520,  {48,48}, {0,  531}},
+    ["sun"]             = {15269177520,  {48,48}, {0,  819}},
+    ["cloud"]           = {15269177520,  {48,48}, {0,  147}},
+    ["rewind"]          = {15269177520,  {48,48}, {0,  627}},
+    ["fast-forward"]    = {15269177520,  {48,48}, {0,  243}},
+    ["volume-2"]        = {15269177520,  {48,48}, {0,  963}},
+    ["music"]           = {15269177520,  {48,48}, {0,  531}},
+    ["camera"]          = {15269177520,  {48,48}, {0,   99}},
+    ["video"]           = {15269177520,  {48,48}, {0,  939}},
+    ["mic"]             = {15269177520,  {48,48}, {0,  531}},
+    ["mail"]            = {15269177520,  {48,48}, {0,  483}},
+    ["monitor"]         = {15269177520,  {48,48}, {0,  531}},
+    ["printer"]         = {15269177520,  {48,48}, {0,  627}},
+    ["power"]           = {15269177520,  {48,48}, {0,  579}},
+    ["clock"]           = {15269177520,  {48,48}, {0,  123}},
+    ["calendar"]        = {15269177520,  {48,48}, {0,   99}},
+    ["rocket"]          = {15269177520,  {48,48}, {0,  627}},
+    ["plane"]           = {15269177520,  {48,48}, {0,  579}},
+    ["briefcase"]       = {15269177520,  {48,48}, {0,   75}},
+    ["wrench"]          = {15269177520,  {48,48}, {0,  963}},
+    ["hammer"]          = {15269177520,  {48,48}, {0,  339}},
+    ["scissors"]        = {15269177520,  {48,48}, {0,  627}},
+    ["edit"]            = {15269177520,  {48,48}, {0,  243}},
+    ["share"]           = {15269177520,  {48,48}, {0,  675}},
+    ["maximize"]        = {15269177520,  {48,48}, {0,  483}},
+    ["minimize"]        = {15269177520,  {48,48}, {0,  531}},
+    ["toggle-left"]     = {15269177520,  {48,48}, {0,  891}},
+    ["toggle-right"]    = {15269177520,  {48,48}, {0,  939}},
+    ["sliders"]         = {15269177520,  {48,48}, {0,  723}},
+    ["chevron-up"]      = {15269177520,  {48,48}, {0,  123}},
+    ["chevron-down"]    = {15269177520,  {48,48}, {0,   75}},
+    ["chevron-left"]    = {15269177520,  {48,48}, {0,  123}},
+    ["chevron-right"]   = {15269177520,  {48,48}, {0,  171}},
+    ["arrow-up"]        = {15269177520,  {48,48}, {0,   75}},
+    ["arrow-down"]      = {15269177520,  {48,48}, {0,   27}},
+    ["arrow-left"]      = {15269177520,  {48,48}, {0,   75}},
+    ["arrow-right"]     = {15269177520,  {48,48}, {0,   99}},
+    ["log-in"]          = {15269177520,  {48,48}, {0,  483}},
+    ["log-out"]         = {15269177520,  {48,48}, {0,  483}},
+}
+
+local function _parseEntry(r)
+    if type(r) ~= "table" or type(r[1]) ~= "number" then return nil end
+    local sz  = (r[2] and type(r[2]) == "table") and Vector2.new(r[2][1], r[2][2]) or Vector2.new(48, 48)
+    local ofs = (r[3] and type(r[3]) == "table") and Vector2.new(r[3][1], r[3][2]) or Vector2.new(0, 0)
+    return { id = tostring(r[1]), sz = sz, ofs = ofs }
+end
+
+local function _loadLucideIcons()
+    local ok, src = pcall(function()
+        return game:HttpGet("https://sirius.menu/rayfield/icons", true)
+    end)
+    if ok and type(src) == "string" and #src > 500 then
+        local fn = loadstring(src)
+        if fn then
+            local ok2, tbl = pcall(fn)
+            if ok2 and type(tbl) == "table" then
+                _Icons = tbl
+                return
+            end
+        end
+    end
+    local ok2, src2 = pcall(function()
+        return game:HttpGet(
+            "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/bundle/lucide-roblox.luau",
+            true
+        )
+    end)
+    if ok2 and type(src2) == "string" and #src2 > 500 then
+        local fn2 = loadstring(src2)
+        if fn2 then
+            local ok3, lib = pcall(fn2)
+            if ok3 and lib and lib.GetAllAssets then
+                local ok4, all = pcall(function() return lib.GetAllAssets(48) end)
+                if ok4 and all then
+                    _Icons = {}
+                    for _, asset in pairs(all) do
+                        _Icons[asset.IconName] = {
+                            asset.Id,
+                            {asset.ImageRectSize.X,   asset.ImageRectSize.Y},
+                            {asset.ImageRectOffset.X, asset.ImageRectOffset.Y},
+                        }
+                    end
+                    return
+                end
+            end
+        end
+    end
+    _Icons = _FALLBACK_ICONS
+end
+
+pcall(_loadLucideIcons)
+if not _Icons then _Icons = _FALLBACK_ICONS end
+
+local function resolveIcon(icon)
+    if not icon or icon == 0 then return nil end
+    if type(icon) == "number" then
+        return { id = tostring(icon), sz = Vector2.new(0,0), ofs = Vector2.new(0,0) }
+    end
+    if type(icon) ~= "string" or icon == "" then return nil end
+    if icon:match("^%d+$") then
+        return { id = icon, sz = Vector2.new(0,0), ofs = Vector2.new(0,0) }
+    end
+    if icon:match("^rbxassetid://") then
+        return { id = icon:gsub("rbxassetid://",""), sz = Vector2.new(0,0), ofs = Vector2.new(0,0) }
+    end
+    local entry = _Icons[icon]
+    if entry then return _parseEntry(entry) end
+    return nil
+end
+
+local function applyIcon(imgLabel, icon)
+    local d = resolveIcon(icon)
+    if not d then imgLabel.Image = ""; return end
+    imgLabel.Image = "rbxassetid://" .. d.id
+    if d.sz.X > 0 then
+        imgLabel.ImageRectSize   = d.sz
+        imgLabel.ImageRectOffset = d.ofs
+    else
+        imgLabel.ImageRectSize   = Vector2.new(0, 0)
+        imgLabel.ImageRectOffset = Vector2.new(0, 0)
+    end
+end
+
+local function setAccentColor(color)
+    T.Accent     = color
+    T.TextRed    = color
+    T.Border     = color
+    T.SliderFill = color
+    T.ToggleOn   = color
+    T.AccentDark = Color3.new(color.R * 0.55, color.G * 0.55, color.B * 0.55)
+    for _, e in ipairs(_accentObjs)     do pcall(function() e[1][e[2]] = color          end) end
+    for _, e in ipairs(_accentDarkObjs) do pcall(function() e[1][e[2]] = T.AccentDark   end) end
+end
+
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name           = "iDepHubUI"
@@ -85,9 +231,6 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.DisplayOrder   = 999
 screenGui.Parent         = playerGui
 
--- ══════════════════════════════════════════════════════════════════
---   VENTANA PRINCIPAL
--- ══════════════════════════════════════════════════════════════════
 local mainFrame = Instance.new("Frame")
 mainFrame.Name              = "MainFrame"
 mainFrame.Size              = UDim2.new(0, 446, 0, 394)
@@ -108,9 +251,6 @@ mainStroke.Thickness = 1.5
 mainStroke.Parent    = mainFrame
 _regAcc(mainStroke, "Color")
 
--- ══════════════════════════════════════════════════════════════════
---   TOP BAR
--- ══════════════════════════════════════════════════════════════════
 local topBar = Instance.new("Frame")
 topBar.Name             = "TopBar"
 topBar.Size             = UDim2.new(1, 0, 0, 38)
@@ -154,7 +294,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size               = UDim2.new(1, -92, 1, 0)
 titleLabel.Position           = UDim2.new(0, 28, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text               = "💠 iDepHub [Duelos]"
+titleLabel.Text               = "UI Library - Nyther"
 titleLabel.TextColor3         = T.Text
 titleLabel.TextSize           = 14
 titleLabel.Font               = Enum.Font.GothamSemibold
@@ -184,9 +324,6 @@ closeBtn.MouseLeave:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(0, 130, 155)}):Play()
 end)
 
--- ══════════════════════════════════════════════════════════════════
---   CUERPO
--- ══════════════════════════════════════════════════════════════════
 local bodyFrame = Instance.new("Frame")
 bodyFrame.Size              = UDim2.new(1, 0, 1, -60)
 bodyFrame.Position          = UDim2.new(0, 0, 0, 38)
@@ -194,9 +331,6 @@ bodyFrame.BackgroundTransparency = 1
 bodyFrame.BorderSizePixel   = 0
 bodyFrame.Parent            = mainFrame
 
--- ══════════════════════════════════════════════════════════════════
---   FOOTER
--- ══════════════════════════════════════════════════════════════════
 local footer = Instance.new("Frame")
 footer.Name             = "Footer"
 footer.Size             = UDim2.new(1, 0, 0, 22)
@@ -219,7 +353,7 @@ local footerLabel = Instance.new("TextLabel")
 footerLabel.Size                  = UDim2.new(1, 0, 1, 0)
 footerLabel.Position              = UDim2.new(0, 0, 0, 0)
 footerLabel.BackgroundTransparency = 1
-footerLabel.Text                  = "By LangerPG"
+footerLabel.Text                  = "By L#######"
 footerLabel.TextColor3            = T.TextRed
 footerLabel.TextSize              = 11
 footerLabel.Font                  = Enum.Font.GothamSemibold
@@ -228,7 +362,6 @@ footerLabel.ZIndex                = 6
 footerLabel.Parent                = footer
 _regAcc(footerLabel, "TextColor3")
 
--- ─── Sidebar ────────────────────────────────────────────────────
 local sidebar = Instance.new("Frame")
 sidebar.Name             = "Sidebar"
 sidebar.Size             = UDim2.new(0, 118, 1, 0)
@@ -255,7 +388,6 @@ sidebarPad.PaddingLeft  = UDim.new(0, 6)
 sidebarPad.PaddingRight = UDim.new(0, 6)
 sidebarPad.Parent       = sidebar
 
--- ─── Área de contenido ──────────────────────────────────────────
 local contentFrame = Instance.new("Frame")
 contentFrame.Name             = "Content"
 contentFrame.Size             = UDim2.new(1, -118, 1, 0)
@@ -265,33 +397,24 @@ contentFrame.BorderSizePixel  = 0
 contentFrame.ClipsDescendants = true
 contentFrame.Parent           = bodyFrame
 
--- ══════════════════════════════════════════════════════════════════
---   SISTEMA DE TABS (con soporte Lucide)
--- ══════════════════════════════════════════════════════════════════
 local registeredTabs = {}
 
 local function SelectTab(target)
     for _, td in ipairs(registeredTabs) do
-        td.page.Visible = false
+        td.page.Visible   = false
         td.accent.Visible = false
-        TweenService:Create(td.btn,    TweenInfo.new(0.12), {BackgroundColor3 = T.TabInactive}):Play()
-        TweenService:Create(td.nameLbl,TweenInfo.new(0.12), {TextColor3       = T.TextDim    }):Play()
+        TweenService:Create(td.btn,     TweenInfo.new(0.12), {BackgroundColor3 = T.TabInactive}):Play()
+        TweenService:Create(td.nameLbl, TweenInfo.new(0.12), {TextColor3       = T.TextDim    }):Play()
         if td.iconImg then
             TweenService:Create(td.iconImg, TweenInfo.new(0.12), {ImageColor3 = T.TextDim}):Play()
-        end
-        if td.iconLbl then
-            TweenService:Create(td.iconLbl, TweenInfo.new(0.12), {TextColor3 = T.TextDim}):Play()
         end
         if td.customPanel then td.customPanel.Visible = false end
     end
     target.accent.Visible = true
-    TweenService:Create(target.btn,    TweenInfo.new(0.12), {BackgroundColor3 = T.TabActive}):Play()
-    TweenService:Create(target.nameLbl,TweenInfo.new(0.12), {TextColor3       = T.Text     }):Play()
+    TweenService:Create(target.btn,     TweenInfo.new(0.12), {BackgroundColor3 = T.TabActive}):Play()
+    TweenService:Create(target.nameLbl, TweenInfo.new(0.12), {TextColor3       = T.Text     }):Play()
     if target.iconImg then
         TweenService:Create(target.iconImg, TweenInfo.new(0.12), {ImageColor3 = T.Accent}):Play()
-    end
-    if target.iconLbl then
-        TweenService:Create(target.iconLbl, TweenInfo.new(0.12), {TextColor3 = T.Accent}):Play()
     end
     if target.customPanel then
         target.page.Visible        = false
@@ -302,6 +425,7 @@ local function SelectTab(target)
     if target.onTabSelected then target.onTabSelected() end
 end
 
+-- ========== NEW TAB (con ícono) ==========
 local function NewTab(name, icon, order)
     local btn = Instance.new("TextButton")
     btn.Name             = "Tab_"..name
@@ -325,35 +449,27 @@ local function NewTab(name, icon, order)
     Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
     _regAcc(accentBar, "BackgroundColor3")
 
-    local iconImgRef, iconLblRef = nil, nil
-    local lucideAsset = getLucideAsset(icon)
-
-    if lucideAsset then
-        local img = Instance.new("ImageLabel")
-        img.Size                   = UDim2.new(0, 18, 0, 18)
-        img.Position               = UDim2.new(0, 9, 0.5, -9)
-        img.BackgroundTransparency = 1
-        img.Image                  = lucideAsset.Url
-        img.ImageRectSize          = lucideAsset.ImageRectSize
-        img.ImageRectOffset        = lucideAsset.ImageRectOffset
-        img.ScaleType              = Enum.ScaleType.Fit
-        img.ImageColor3            = T.TextDim
-        img.ZIndex                 = 3
-        img.Parent                 = btn
-        iconImgRef = img
-    else
+    local iconImgRef = nil
+    local iconData = resolveIcon(icon)
+    if iconData then
+        iconImgRef = Instance.new("ImageLabel")
+        iconImgRef.Size                 = UDim2.new(0, 18, 0, 18)
+        iconImgRef.Position             = UDim2.new(0, 10, 0.5, -9)
+        iconImgRef.BackgroundTransparency = 1
+        iconImgRef.ImageColor3          = T.TextDim
+        iconImgRef.ScaleType            = Enum.ScaleType.Fit
+        iconImgRef.Parent               = btn
+        applyIcon(iconImgRef, icon)
+    elseif icon and icon ~= "" then
         local iconLbl = Instance.new("TextLabel")
         iconLbl.Size                 = UDim2.new(0, 22, 1, 0)
         iconLbl.Position             = UDim2.new(0, 9, 0, 0)
         iconLbl.BackgroundTransparency = 1
-        iconLbl.Text                 = icon or ""
-        iconLbl.TextSize             = 14
+        iconLbl.Text                 = tostring(icon)
+        iconLbl.TextSize             = 15
         iconLbl.Font                 = Enum.Font.GothamSemibold
-        iconLbl.TextColor3           = T.TextDim
         iconLbl.TextXAlignment       = Enum.TextXAlignment.Center
-        iconLbl.ZIndex               = 3
         iconLbl.Parent               = btn
-        iconLblRef = iconLbl
     end
 
     local nameLbl = Instance.new("TextLabel")
@@ -363,11 +479,10 @@ local function NewTab(name, icon, order)
     nameLbl.BackgroundTransparency = 1
     nameLbl.Text                 = name
     nameLbl.TextColor3           = T.TextDim
-    nameLbl.TextSize             = 12
-    nameLbl.Font                 = Enum.Font.Gotham
+    nameLbl.TextSize             = 13
+    nameLbl.Font                 = Enum.Font.GothamSemibold
     nameLbl.TextXAlignment       = Enum.TextXAlignment.Left
     nameLbl.TextTruncate         = Enum.TextTruncate.AtEnd
-    nameLbl.ZIndex               = 3
     nameLbl.Parent               = btn
 
     local page = Instance.new("ScrollingFrame")
@@ -394,14 +509,7 @@ local function NewTab(name, icon, order)
     pagePad.PaddingRight  = UDim.new(0, 10)
     pagePad.Parent        = page
 
-    local tabData = {
-        btn     = btn,
-        accent  = accentBar,
-        nameLbl = nameLbl,
-        page    = page,
-        iconImg = iconImgRef,
-        iconLbl = iconLblRef,
-    }
+    local tabData = {btn = btn, accent = accentBar, nameLbl = nameLbl, page = page, iconImg = iconImgRef}
     table.insert(registeredTabs, tabData)
 
     btn.MouseButton1Click:Connect(function() SelectTab(tabData) end)
@@ -413,13 +521,9 @@ local function NewTab(name, icon, order)
         if page.Visible or (tabData.customPanel and tabData.customPanel.Visible) then return end
         TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = T.TabInactive}):Play()
     end)
-
     return page, tabData
 end
 
--- ══════════════════════════════════════════════════════════════════
---   HELPERS DE INSTANCIAS
--- ══════════════════════════════════════════════════════════════════
 local _ord = 0
 local function nextOrd() _ord += 1; return _ord end
 
@@ -445,10 +549,8 @@ local function ElemBase(parent, h)
     return f, s
 end
 
--- ══════════════════════════════════════════════════════════════════
---   SECCIÓN (con ícono Lucide opcional)
--- ══════════════════════════════════════════════════════════════════
-local function NewSection(parent, title, iconName)
+-- ========== NEW SECTION (con ícono opcional) ==========
+local function NewSection(parent, title, icon)
     local sec = Instance.new("Frame")
     sec.Size              = UDim2.new(1, 0, 0, 0)
     sec.BackgroundTransparency = 1
@@ -469,21 +571,16 @@ local function NewSection(parent, title, iconName)
     hdr.Parent           = sec
 
     local iconOffset = 0
-    if iconName then
-        local secAsset = getLucideAsset(iconName)
-        if secAsset then
-            local secImg = Instance.new("ImageLabel")
-            secImg.Size                   = UDim2.new(0, 14, 0, 14)
-            secImg.Position               = UDim2.new(0, 0, 0.5, -7)
-            secImg.BackgroundTransparency = 1
-            secImg.Image                  = secAsset.Url
-            secImg.ImageRectSize          = secAsset.ImageRectSize
-            secImg.ImageRectOffset        = secAsset.ImageRectOffset
-            secImg.ScaleType              = Enum.ScaleType.Fit
-            secImg.ImageColor3            = T.TextRed
-            secImg.Parent                 = hdr
-            iconOffset = 18
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 14, 0, 14)
+        iconImg.Position             = UDim2.new(0, 0, 0.5, -7)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.TextRed
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = hdr
+        applyIcon(iconImg, icon)
+        iconOffset = 18
     end
 
     local hdrTxt = Instance.new("TextLabel")
@@ -509,28 +606,22 @@ local function NewSection(parent, title, iconName)
     return sec
 end
 
--- ══════════════════════════════════════════════════════════════════
---   TOGGLE
--- ══════════════════════════════════════════════════════════════════
-local function NewToggle(parent, label, sub, default, callback, iconName)
+-- ========== NEW TOGGLE (con ícono opcional) ==========
+local function NewToggle(parent, label, sub, default, callback, icon)
     local f, stroke = ElemBase(parent, 46)
 
     local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 16, 0, 16)
-            img.Position               = UDim2.new(0, 10, 0, 8)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.Accent
-            img.Parent                 = f
-            labelOffset = 30
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 16, 0, 16)
+        iconImg.Position             = UDim2.new(0, 10, 0, 7)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.Accent
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = f
+        applyIcon(iconImg, icon)
+        labelOffset = 30
+        _regAcc(iconImg, "ImageColor3")
     end
 
     local lbl = Instance.new("TextLabel")
@@ -546,12 +637,12 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     lbl.Parent            = f
 
     local subLbl = Instance.new("TextLabel")
-    subLbl.Size              = UDim2.new(1, -58, 0, 12)
-    subLbl.Position          = UDim2.new(0, labelOffset, 0, 26)
+    subLbl.Size              = UDim2.new(1, -58, 0, 14)
+    subLbl.Position          = UDim2.new(0, labelOffset, 0, 25)
     subLbl.BackgroundTransparency = 1
     subLbl.Text              = sub
     subLbl.TextColor3        = T.TextDim
-    subLbl.TextSize          = 10
+    subLbl.TextSize          = 12
     subLbl.Font              = Enum.Font.Gotham
     subLbl.TextXAlignment    = Enum.TextXAlignment.Left
     subLbl.TextTruncate      = Enum.TextTruncate.AtEnd
@@ -654,28 +745,22 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     return f, setState, setLocked
 end
 
--- ══════════════════════════════════════════════════════════════════
---   SLIDER
--- ══════════════════════════════════════════════════════════════════
-local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, iconName)
+-- ========== NEW SLIDER (con ícono opcional) ==========
+local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, icon)
     local f, stroke = ElemBase(parent, 60)
 
     local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 16, 0, 16)
-            img.Position               = UDim2.new(0, 10, 0, 9)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.Accent
-            img.Parent                 = f
-            labelOffset = 30
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 16, 0, 16)
+        iconImg.Position             = UDim2.new(0, 10, 0, 9)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.Accent
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = f
+        applyIcon(iconImg, icon)
+        labelOffset = 30
+        _regAcc(iconImg, "ImageColor3")
     end
 
     local lbl = Instance.new("TextLabel")
@@ -691,12 +776,12 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, 
     lbl.Parent            = f
 
     local subLbl = Instance.new("TextLabel")
-    subLbl.Size              = UDim2.new(0.62, 0, 0, 12)
+    subLbl.Size              = UDim2.new(0.62, 0, 0, 14)
     subLbl.Position          = UDim2.new(0, labelOffset, 0, 25)
     subLbl.BackgroundTransparency = 1
     subLbl.Text              = sub
     subLbl.TextColor3        = T.TextDim
-    subLbl.TextSize          = 10
+    subLbl.TextSize          = 12
     subLbl.Font              = Enum.Font.Gotham
     subLbl.TextXAlignment    = Enum.TextXAlignment.Left
     subLbl.TextTruncate      = Enum.TextTruncate.AtEnd
@@ -747,7 +832,6 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, 
     trackBtn.Parent               = trackBg
 
     local draggingSl = false
-
     local function updateSl(x)
         local relX = math.clamp((x - trackBg.AbsolutePosition.X) / trackBg.AbsoluteSize.X, 0, 1)
         local value = math.floor(minVal + relX * (maxVal - minVal) + 0.5)
@@ -782,28 +866,22 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, 
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   BUTTON
--- ══════════════════════════════════════════════════════════════════
-local function NewButton(parent, label, sub, callback, iconName)
+-- ========== NEW BUTTON (con ícono opcional) ==========
+local function NewButton(parent, label, sub, callback, icon)
     local f, stroke = ElemBase(parent, 46)
 
     local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 16, 0, 16)
-            img.Position               = UDim2.new(0, 10, 0, 8)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.Accent
-            img.Parent                 = f
-            labelOffset = 30
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 16, 0, 16)
+        iconImg.Position             = UDim2.new(0, 10, 0, 7)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.Accent
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = f
+        applyIcon(iconImg, icon)
+        labelOffset = 30
+        _regAcc(iconImg, "ImageColor3")
     end
 
     local lbl = Instance.new("TextLabel")
@@ -819,12 +897,12 @@ local function NewButton(parent, label, sub, callback, iconName)
     lbl.Parent            = f
 
     local subLbl = Instance.new("TextLabel")
-    subLbl.Size              = UDim2.new(1, -50, 0, 12)
-    subLbl.Position          = UDim2.new(0, labelOffset, 0, 26)
+    subLbl.Size              = UDim2.new(1, -50, 0, 14)
+    subLbl.Position          = UDim2.new(0, labelOffset, 0, 25)
     subLbl.BackgroundTransparency = 1
     subLbl.Text              = sub
     subLbl.TextColor3        = T.TextDim
-    subLbl.TextSize          = 10
+    subLbl.TextSize          = 12
     subLbl.Font              = Enum.Font.Gotham
     subLbl.TextXAlignment    = Enum.TextXAlignment.Left
     subLbl.TextTruncate      = Enum.TextTruncate.AtEnd
@@ -866,33 +944,13 @@ local function NewButton(parent, label, sub, callback, iconName)
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   INPUT (nuevo desde v2)
--- ══════════════════════════════════════════════════════════════════
-local function NewInput(parent, label, placeholder, callback, iconName)
+-- ========== NEW INPUT ==========
+local function NewInput(parent, label, placeholder, callback)
     local f, stroke = ElemBase(parent, 46)
-
-    local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 16, 0, 16)
-            img.Position               = UDim2.new(0, 10, 0, 8)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.Accent
-            img.Parent                 = f
-            labelOffset = 30
-        end
-    end
 
     local lbl = Instance.new("TextLabel")
     lbl.Size              = UDim2.new(0.48, -10, 0, 18)
-    lbl.Position          = UDim2.new(0, labelOffset, 0, 7)
+    lbl.Position          = UDim2.new(0, 10, 0, 7)
     lbl.BackgroundTransparency = 1
     lbl.Text              = label
     lbl.TextColor3        = T.Text
@@ -904,11 +962,11 @@ local function NewInput(parent, label, placeholder, callback, iconName)
 
     local subLbl = Instance.new("TextLabel")
     subLbl.Size              = UDim2.new(0.48, -10, 0, 14)
-    subLbl.Position          = UDim2.new(0, labelOffset, 0, 25)
+    subLbl.Position          = UDim2.new(0, 10, 0, 25)
     subLbl.BackgroundTransparency = 1
-    subLbl.Text              = placeholder or "Escribe un valor"
+    subLbl.Text              = "Escribe un valor"
     subLbl.TextColor3        = T.TextDim
-    subLbl.TextSize          = 10
+    subLbl.TextSize          = 12
     subLbl.Font              = Enum.Font.Gotham
     subLbl.TextXAlignment    = Enum.TextXAlignment.Left
     subLbl.TextTruncate      = Enum.TextTruncate.AtEnd
@@ -921,6 +979,7 @@ local function NewInput(parent, label, placeholder, callback, iconName)
     boxBg.BorderSizePixel  = 0
     boxBg.Parent           = f
     Corner(boxBg, 4)
+
     local boxStroke = Stroke(boxBg, T.BorderDim, 1)
 
     local textBox = Instance.new("TextBox")
@@ -942,7 +1001,7 @@ local function NewInput(parent, label, placeholder, callback, iconName)
         TweenService:Create(f,         TweenInfo.new(0.1), {BackgroundColor3 = T.ElemHov}):Play()
         TweenService:Create(stroke,    TweenInfo.new(0.1), {Color = T.Accent}):Play()
     end)
-    textBox.FocusLost:Connect(function()
+    textBox.FocusLost:Connect(function(enterPressed)
         TweenService:Create(boxStroke, TweenInfo.new(0.1), {Color = T.BorderDim}):Play()
         TweenService:Create(f,         TweenInfo.new(0.1), {BackgroundColor3 = T.Elem}):Play()
         TweenService:Create(stroke,    TweenInfo.new(0.1), {Color = T.BorderDim}):Play()
@@ -959,30 +1018,24 @@ local function NewInput(parent, label, placeholder, callback, iconName)
     return f, textBox
 end
 
--- ══════════════════════════════════════════════════════════════════
---   KEYBIND
--- ══════════════════════════════════════════════════════════════════
-local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
+-- ========== NEW KEYBIND (con ícono opcional) ==========
+local function NewKeybind(parent, label, sub, defaultKey, callback, icon)
     local f, stroke = ElemBase(parent, 46)
     local currentKey = defaultKey
     local listening  = false
 
     local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 16, 0, 16)
-            img.Position               = UDim2.new(0, 10, 0, 8)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.Accent
-            img.Parent                 = f
-            labelOffset = 30
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 16, 0, 16)
+        iconImg.Position             = UDim2.new(0, 10, 0, 7)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.Accent
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = f
+        applyIcon(iconImg, icon)
+        labelOffset = 30
+        _regAcc(iconImg, "ImageColor3")
     end
 
     local lbl = Instance.new("TextLabel")
@@ -998,12 +1051,12 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     lbl.Parent            = f
 
     local subLbl = Instance.new("TextLabel")
-    subLbl.Size              = UDim2.new(1, -82, 0, 12)
-    subLbl.Position          = UDim2.new(0, labelOffset, 0, 26)
+    subLbl.Size              = UDim2.new(1, -82, 0, 14)
+    subLbl.Position          = UDim2.new(0, labelOffset, 0, 25)
     subLbl.BackgroundTransparency = 1
     subLbl.Text              = sub
     subLbl.TextColor3        = T.TextDim
-    subLbl.TextSize          = 10
+    subLbl.TextSize          = 12
     subLbl.Font              = Enum.Font.Gotham
     subLbl.TextXAlignment    = Enum.TextXAlignment.Left
     subLbl.TextTruncate      = Enum.TextTruncate.AtEnd
@@ -1016,6 +1069,7 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     keyBg.BorderSizePixel  = 0
     keyBg.Parent           = f
     Corner(keyBg, 4)
+
     local keyStroke = Stroke(keyBg, T.BorderDim, 1)
 
     local keyLbl = Instance.new("TextLabel")
@@ -1040,7 +1094,6 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
         keyLbl.Text = "..."
         keyLbl.TextColor3 = T.Text
         TweenService:Create(keyStroke, TweenInfo.new(0.1), {Color = T.Accent}):Play()
-
         local conn
         conn = UserInputService.InputBegan:Connect(function(inp, gp)
             if gp then return end
@@ -1072,28 +1125,21 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   LABEL
--- ══════════════════════════════════════════════════════════════════
-local function NewLabel(parent, text, iconName)
+-- ========== NEW LABEL (con ícono opcional) ==========
+local function NewLabel(parent, text, icon)
     local f, _ = ElemBase(parent, 30)
 
     local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 14, 0, 14)
-            img.Position               = UDim2.new(0, 10, 0.5, -7)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.TextDim
-            img.Parent                 = f
-            labelOffset = 28
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 14, 0, 14)
+        iconImg.Position             = UDim2.new(0, 10, 0.5, -7)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.TextDim
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = f
+        applyIcon(iconImg, icon)
+        labelOffset = 28
     end
 
     local lbl = Instance.new("TextLabel")
@@ -1111,10 +1157,8 @@ local function NewLabel(parent, text, iconName)
     return f
 end
 
--- ══════════════════════════════════════════════════════════════════
---   COLOR PICKER mejorado (con HEX / RGB, desde v2)
--- ══════════════════════════════════════════════════════════════════
-local function NewColorPicker(parent, label, sub, defaultColor, callback, iconName)
+-- ========== NEW COLOR PICKER (con ícono opcional) ==========
+local function NewColorPicker(parent, label, sub, defaultColor, callback, icon)
     defaultColor = defaultColor or Color3.fromRGB(15, 15, 15)
     local SQ_H   = 115
     local HUE_W  = 16
@@ -1166,24 +1210,21 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     header.LayoutOrder      = 1
     header.Parent           = container
     Corner(header, 4)
+
     local hStroke = Stroke(header, T.BorderDim, 1)
 
     local labelOffset = 10
-    if iconName then
-        local asset = getLucideAsset(iconName)
-        if asset then
-            local img = Instance.new("ImageLabel")
-            img.Size                   = UDim2.new(0, 16, 0, 16)
-            img.Position               = UDim2.new(0, 10, 0, 8)
-            img.BackgroundTransparency = 1
-            img.Image                  = asset.Url
-            img.ImageRectSize          = asset.ImageRectSize
-            img.ImageRectOffset        = asset.ImageRectOffset
-            img.ScaleType              = Enum.ScaleType.Fit
-            img.ImageColor3            = T.Accent
-            img.Parent                 = header
-            labelOffset = 30
-        end
+    if icon then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Size                 = UDim2.new(0, 16, 0, 16)
+        iconImg.Position             = UDim2.new(0, 10, 0, 7)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.Accent
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = header
+        applyIcon(iconImg, icon)
+        labelOffset = 30
+        _regAcc(iconImg, "ImageColor3")
     end
 
     local lbl = Instance.new("TextLabel")
@@ -1392,7 +1433,6 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
         refreshVisuals()
         refreshInputs()
     end
-
     local function updateFromSquare(mx, my)
         local rx = math.clamp((mx - square.AbsolutePosition.X) / square.AbsoluteSize.X, 0, 1)
         local ry = math.clamp((my - square.AbsolutePosition.Y) / square.AbsoluteSize.Y, 0, 1)
@@ -1441,7 +1481,6 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
             refreshInputs()
         end
     end)
-
     local function applyRGB()
         local r = clampByte(rBox.Text)
         local g = clampByte(gBox.Text)
@@ -1485,13 +1524,10 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     square.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
     refreshVisuals()
     refreshInputs()
-
     return container
 end
 
--- ══════════════════════════════════════════════════════════════════
---   SEARCH PANEL (desde v2, adaptado a Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- ========== SEARCH PANEL (sin cambios) ==========
 local function NewSearchPanel(searchTabData, opts)
     local getWeapons = opts and opts.getWeapons
     local onSend     = opts and opts.onSend
@@ -1517,21 +1553,14 @@ local function NewSearchPanel(searchTabData, opts)
     Corner(searchBarBg, 6)
     Stroke(searchBarBg, T.Border, 1)
 
-    -- Ícono de búsqueda (Lucide o emoji)
-    local searchIconImg = makeIconImage("search", 16, nil)
-    if searchIconImg then
-        searchIconImg.Position = UDim2.new(0, 8, 0.5, -8)
-        searchIconImg.Parent = searchBarBg
-    else
-        local searchIcon = Instance.new("TextLabel")
-        searchIcon.Size                 = UDim2.new(0, 28, 1, 0)
-        searchIcon.BackgroundTransparency = 1
-        searchIcon.Text                 = "🔍"
-        searchIcon.TextSize             = 13
-        searchIcon.Font                 = Enum.Font.GothamSemibold
-        searchIcon.TextXAlignment       = Enum.TextXAlignment.Center
-        searchIcon.Parent               = searchBarBg
-    end
+    local searchIcon = Instance.new("TextLabel")
+    searchIcon.Size                 = UDim2.new(0, 28, 1, 0)
+    searchIcon.BackgroundTransparency = 1
+    searchIcon.Text                 = "🔍"
+    searchIcon.TextSize             = 13
+    searchIcon.Font                 = Enum.Font.GothamSemibold
+    searchIcon.TextXAlignment       = Enum.TextXAlignment.Center
+    searchIcon.Parent               = searchBarBg
 
     local searchBox = Instance.new("TextBox")
     searchBox.Size              = UDim2.new(1, -36, 1, 0)
@@ -1657,12 +1686,12 @@ local function NewSearchPanel(searchTabData, opts)
     local function SetSelected(name, rowData)
         for _, rf in ipairs(weaponRowFrames) do
             TweenService:Create(rf.frame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(15, 15, 15)}):Play()
-            if rf.lbl then rf.lbl.TextColor3 = T.TextDim end
+            rf.lbl.TextColor3 = T.TextDim
         end
         selectedWeapon = name
         if name and rowData then
             TweenService:Create(rowData.frame, TweenInfo.new(0.1), {BackgroundColor3 = T.AccentDark}):Play()
-            if rowData.lbl then rowData.lbl.TextColor3 = T.Text end
+            rowData.lbl.TextColor3 = T.Text
             selLabel.Text       = "Seleccionado: " .. name
             selLabel.TextColor3 = T.TextRed
         else
@@ -1672,9 +1701,7 @@ local function NewSearchPanel(searchTabData, opts)
     end
 
     local function BuildList(filter)
-        for _, rf in ipairs(weaponRowFrames) do
-            if rf.frame then rf.frame:Destroy() end
-        end
+        for _, rf in ipairs(weaponRowFrames) do rf.frame:Destroy() end
         weaponRowFrames = {}
         selectedWeapon  = nil
         selLabel.Text       = "Seleccionado: ninguno"
@@ -1755,9 +1782,7 @@ local function NewSearchPanel(searchTabData, opts)
     searchTabData.onTabSelected = function() BuildList(searchBox.Text) end
 end
 
--- ══════════════════════════════════════════════════════════════════
---   NOTIFICACIONES (estilo Rayfield, con Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- ========== NOTIFICACIONES ==========
 local _notifList  = {}
 local NOTIF_W     = 262
 local NOTIF_H     = 66
@@ -1774,7 +1799,7 @@ local function Notify(opts)
     local title    = tostring(opts.Title    or "Nyther")
     local content  = tostring(opts.Content  or "")
     local duration = tonumber(opts.Duration) or 4
-    local icon     = opts.Icon   -- nombre Lucide, o nil
+    local icon     = opts.Icon
 
     for i, card in ipairs(_notifList) do
         TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
@@ -1809,23 +1834,19 @@ local function Notify(opts)
     _regAcc(accentBar2, "BackgroundColor3")
 
     local textStartX = 14
-    if icon then
-        local iconAsset = getLucideAsset(icon)
-        if iconAsset then
-            local notifIcon = Instance.new("ImageLabel")
-            notifIcon.Size                 = UDim2.new(0, 22, 0, 22)
-            notifIcon.Position             = UDim2.new(0, 14, 0.5, -11)
-            notifIcon.BackgroundTransparency = 1
-            notifIcon.ImageColor3          = T.Accent
-            notifIcon.ScaleType            = Enum.ScaleType.Fit
-            notifIcon.ZIndex               = 201
-            notifIcon.Parent               = card
-            notifIcon.Image                = iconAsset.Url
-            notifIcon.ImageRectSize        = iconAsset.ImageRectSize
-            notifIcon.ImageRectOffset      = iconAsset.ImageRectOffset
-            _regAcc(notifIcon, "ImageColor3")
-            textStartX = 44
-        end
+    local iconD = resolveIcon(icon)
+    if iconD then
+        local notifIcon = Instance.new("ImageLabel")
+        notifIcon.Size                 = UDim2.new(0, 22, 0, 22)
+        notifIcon.Position             = UDim2.new(0, 14, 0.5, -11)
+        notifIcon.BackgroundTransparency = 1
+        notifIcon.ImageColor3          = T.Accent
+        notifIcon.ScaleType            = Enum.ScaleType.Fit
+        notifIcon.ZIndex               = 201
+        notifIcon.Parent               = card
+        _regAcc(notifIcon, "ImageColor3")
+        applyIcon(notifIcon, icon)
+        textStartX = 44
     end
 
     local notifTitle = Instance.new("TextLabel")
@@ -1862,6 +1883,7 @@ local function Notify(opts)
     progBg.ZIndex           = 201
     progBg.Parent           = card
     Instance.new("UICorner", progBg).CornerRadius = UDim.new(0, 1)
+
     local progFill = Instance.new("Frame")
     progFill.Size             = UDim2.new(1, 0, 1, 0)
     progFill.BackgroundColor3 = T.Accent
@@ -1898,36 +1920,19 @@ local function Notify(opts)
     return card
 end
 
--- ══════════════════════════════════════════════════════════════════
---   CAMBIO DINÁMICO DE COLOR ACENTO (setAccentColor)
--- ══════════════════════════════════════════════════════════════════
-local function setAccentColor(color)
-    T.Accent     = color
-    T.TextRed    = color
-    T.Border     = color
-    T.SliderFill = color
-    T.ToggleOn   = color
-    T.AccentDark = Color3.new(color.R * 0.55, color.G * 0.55, color.B * 0.55)
-    for _, e in ipairs(_accentObjs) do
-        pcall(function() e[1][e[2]] = color end)
-    end
-    for _, e in ipairs(_accentDarkObjs) do
-        pcall(function() e[1][e[2]] = T.AccentDark end)
-    end
-end
-
--- ══════════════════════════════════════════════════════════════════
---   DRAG DE VENTANA
--- ══════════════════════════════════════════════════════════════════
+-- ========== DRAG ==========
 local isDragging, dragStart, frameStart = false, nil, nil
-
 topBar.InputBegan:Connect(function(inp)
     if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = true; dragStart = inp.Position; frameStart = mainFrame.Position
+        isDragging = true
+        dragStart  = inp.Position
+        frameStart = mainFrame.Position
     end
 end)
 topBar.InputEnded:Connect(function(inp)
-    if inp.UserInputType == Enum.UserInputType.MouseButton1 then isDragging = false end
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
 end)
 UserInputService.InputChanged:Connect(function(inp)
     if isDragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
@@ -1939,13 +1944,10 @@ UserInputService.InputChanged:Connect(function(inp)
     end
 end)
 
--- ══════════════════════════════════════════════════════════════════
---   API PÚBLICA (completa, igual que la versión 2 pero con Lucide)
--- ══════════════════════════════════════════════════════════════════
+-- ========== API PÚBLICA ==========
 return {
-    -- control de acento
+    titleLabel      = titleLabel,
     setAccentColor  = setAccentColor,
-    -- elementos base
     NewTab          = NewTab,
     NewSection      = NewSection,
     NewToggle       = NewToggle,
@@ -1956,8 +1958,10 @@ return {
     NewLabel        = NewLabel,
     NewColorPicker  = NewColorPicker,
     NewSearchPanel  = NewSearchPanel,
-    Notify          = Notify,
     SelectTab       = SelectTab,
     registeredTabs  = registeredTabs,
     mainFrame       = mainFrame,
+    resolveIcon     = resolveIcon,
+    applyIcon       = applyIcon,
+    Notify          = Notify,
 }
