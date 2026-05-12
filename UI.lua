@@ -2,293 +2,25 @@ local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players          = game:GetService("Players")
 local LocalPlayer      = Players.LocalPlayer
-
-local LucideIcons = {
-    -- Shots / Combat
-    ["crosshair"]           = 0,
-    ["crosshair-2"]         = 0,
-    ["target"]              = 0,
-    ["aim"]                 = 0,
-    ["swords"]              = 0,
-    ["zap"]                 = 0,
-    ["zap-off"]             = 0,
-    ["shield"]              = 0,
-    ["shield-off"]          = 0,
-    ["shield-check"]        = 0,
-    ["bullet"]              = 0,
-    -- Vision / ESP
-    ["eye"]                 = 0,
-    ["eye-off"]             = 0,
-    ["scan"]                = 0,
-    ["scan-eye"]            = 0,
-    ["radar"]               = 0,
-    ["binoculars"]          = 0,
-    -- Automation / Bot
-    ["bot"]                 = 0,
-    ["cpu"]                 = 0,
-    ["binary"]              = 0,
-    ["circuit-board"]       = 0,
-    ["terminal"]            = 0,
-    -- Detection
-    ["circle-dot"]          = 0,
-    ["circle"]              = 0,
-    ["dot"]                 = 0,
-    ["focus"]               = 0,
-    -- Tools / Config
-    ["wrench"]              = 0,
-    ["settings"]            = 0,
-    ["settings-2"]          = 0,
-    ["sliders"]             = 0,
-    ["sliders-horizontal"]  = 0,
-    ["tool"]                = 0,
-    ["hammer"]              = 0,
-    ["pen-tool"]            = 0,
-    -- Info / UI
-    ["info"]                = 0,
-    ["help-circle"]         = 0,
-    ["alert-circle"]        = 0,
-    ["alert-triangle"]      = 0,
-    ["badge-info"]          = 0,
-    -- Server / Network
-    ["server"]              = 0,
-    ["network"]             = 0,
-    ["globe"]               = 0,
-    ["wifi"]                = 0,
-    ["link"]                = 0,
-    ["share-2"]             = 0,
-    ["clipboard"]           = 0,
-    ["copy"]                = 0,
-    ["external-link"]       = 0,
-    -- Player / User
-    ["user"]                = 0,
-    ["users"]               = 0,
-    ["user-check"]          = 0,
-    ["skull"]               = 0,
-    ["ghost"]               = 0,
-    ["home"]                = 0,
-    ["star"]                = 0,
-    ["heart"]               = 0,
-    ["lock"]                = 0,
-    ["unlock"]              = 0,
-    ["key"]                 = 0,
-    ["layers"]              = 0,
-    ["layout"]              = 0,
-    ["maximize"]            = 0,
-    ["minimize"]            = 0,
-    ["minus"]               = 0,
-    ["plus"]                = 0,
-    ["x"]                   = 0,
-    ["check"]               = 0,
-    ["activity"]            = 0,
-    ["trending-up"]         = 0,
-    ["trending-down"]       = 0,
-}
-
--- Registra un icono individual.
--- assetData puede ser:
---   número      → asset ID individual   (rbxassetid://N)
---   tabla       → spritesheet           { id=N, ox=offsetX, oy=offsetY }
-local function registerIcon(name, assetData)
-    LucideIcons[name] = assetData
-end
-
--- Registra múltiples iconos desde una tabla.
--- Acepta tanto IDs planos como tablas de spritesheet.
-local function registerIcons(tbl)
-    for name, data in pairs(tbl) do
-        if type(data) == "table" then
-            LucideIcons[name] = data          -- spritesheet: {id,ox,oy}
-        else
-            LucideIcons[name] = tonumber(data) or data
-        end
-    end
-end
-
--- Inicializa los iconos Lucide desde el módulo oficial de latte-soft.
---
---   local Lucide = require(path.to.lucide-roblox)  -- require del módulo
---   UI.initLucideModule(Lucide)
---
--- Esto carga automáticamente todos los iconos disponibles (1500+) usando
--- Lucide.GetAllAssets(48), que usa los spritesheets de 48px de Roblox.
-local function initLucideModule(lucideModule)
-    if not lucideModule or not lucideModule.GetAllAssets then
-        warn("[NytherUI] initLucideModule: módulo inválido o sin GetAllAssets")
-        return false
-    end
-    local ok, allAssets = pcall(lucideModule.GetAllAssets, lucideModule, 48)
-    if not ok or type(allAssets) ~= "table" then
-        -- Algunos builds usan GetAllAssets como función libre, no método
-        ok, allAssets = pcall(lucideModule.GetAllAssets, 48)
-    end
-    if not ok or type(allAssets) ~= "table" then
-        warn("[NytherUI] initLucideModule: error al obtener assets:", allAssets)
-        return false
-    end
-    local count = 0
-    for _, asset in pairs(allAssets) do
-        if asset.IconName and asset.Id and asset.ImageRectOffset then
-            LucideIcons[asset.IconName] = {
-                id = asset.Id,
-                ox = asset.ImageRectOffset.X,
-                oy = asset.ImageRectOffset.Y,
-            }
-            count += 1
-        end
-    end
-    return count > 0
-end
-
--- Carga un pack de iconos desde una URL que devuelve JSON.
--- El JSON debe tener el formato:
---   { "icon-name": assetId, ... }              ← IDs individuales
---   { "icon-name": {id=N,ox=X,oy=Y}, ... }    ← spritesheet
-local function tryLoadIconPack(url)
-    local hs = game:GetService("HttpService")
-    local function decode(body)
-        local ok, data = pcall(hs.JSONDecode, hs, body)
-        if ok and type(data) == "table" then registerIcons(data); return true end
-        return false
-    end
-    local httpReq = (syn and syn.request) or (http and http.request) or (request) or nil
-    if httpReq then
-        local ok, res = pcall(httpReq, { Url = url, Method = "GET" })
-        if ok and res and (res.StatusCode == 200 or res.status_code == 200) then
-            if decode(res.Body or res.body or "") then return true end
-        end
-    end
-    local ok2, body = pcall(function() return game:HttpGet(url) end)
-    if ok2 and body then
-        if decode(body) then return true end
-    end
-    return false
-end
-
-local function normIconName(name)
-    return name:lower():gsub("_", "-"):gsub("%s+", "-")
-end
-
--- resolveIcon(icon) → rawId, isImage, rectOffset, rectSize
---
---   rawId      : string con el asset ID (o URL), nil si no hay icono válido
---   isImage    : bool
---   rectOffset : Vector2 para spritesheet (nil si es asset individual)
---   rectSize   : Vector2 para spritesheet (nil si es asset individual)
---
--- Los dos últimos valores solo vienen cuando el icono proviene del
--- spritesheet de latte-soft/lucide-roblox.
-local function resolveIcon(icon)
-    if icon == nil or icon == "" then return nil, false, nil, nil end
-
-    -- Número directo → asset individual
-    if type(icon) == "number" then
-        if icon > 0 then return tostring(icon), true, nil, nil end
-        return nil, false, nil, nil
-    end
-
-    if type(icon) == "string" then
-        -- URL directa
-        if icon:match("^https?://") then
-            return icon, true, nil, nil
-        end
-
-        -- Buscar en la tabla de Lucide
-        local key      = normIconName(icon)
-        local lucideId = LucideIcons[key] or LucideIcons[icon]
-
-        if lucideId ~= nil then
-            -- ── Formato spritesheet: { id=N, ox=X, oy=Y } ──
-            if type(lucideId) == "table" then
-                local id = lucideId.id
-                if type(id) == "number" and id > 0 then
-                    return tostring(id), true,
-                           Vector2.new(lucideId.ox or 0, lucideId.oy or 0),
-                           Vector2.new(48, 48)
-                end
-                return nil, false, nil, nil
-            end
-            -- ── Formato número (asset individual) ──
-            if type(lucideId) == "number" then
-                if lucideId > 0 then return tostring(lucideId), true, nil, nil end
-                return nil, false, nil, nil
-            end
-            -- ── Formato string ──
-            if type(lucideId) == "string" then
-                if lucideId:match("^%d+$") and tonumber(lucideId) > 0 then
-                    return lucideId, true, nil, nil
-                elseif lucideId:match("^https?://") then
-                    return lucideId, true, nil, nil
-                end
-                return nil, false, nil, nil
-            end
-        end
-
-        -- String numérico directo
-        if icon:match("^%d+$") then
-            return icon, true, nil, nil
-        end
-
-        -- rbxassetid://
-        if icon:match("^rbxassetid://") then
-            local id = icon:gsub("rbxassetid://", "")
-            if id ~= "" and id ~= "0" then return id, true, nil, nil end
-            return nil, false, nil, nil
-        end
-
-        -- Desconocido → silencio
-        return nil, false, nil, nil
-    end
-
-    return nil, false, nil, nil
-end
-
--- MakeIconImg(parent, rawId, size, posX, posY, color, zindex, rectOffset, rectSize)
---
---   rectOffset : Vector2 — posición del icono dentro del spritesheet (opcional)
---   rectSize   : Vector2 — tamaño del icono en el spritesheet         (opcional)
---
--- Si se pasan rectOffset/rectSize, se configuran ImageRectOffset/ImageRectSize
--- para recortar correctamente el spritesheet de latte-soft/lucide-roblox.
-local function MakeIconImg(parent, rawId, size, posX, posY, color, zindex, rectOffset, rectSize)
-    if rawId == nil then return nil end
-    local img = Instance.new("ImageLabel")
-    img.Size                   = UDim2.new(0, size, 0, size)
-    img.Position               = UDim2.new(0, posX, 0.5, -math.floor(size / 2))
-    img.BackgroundTransparency = 1
-    img.Image                  = rawId:match("^https?://") and rawId or ("rbxassetid://" .. rawId)
-    img.ImageColor3            = color or Color3.fromRGB(80, 80, 80)
-    img.ZIndex                 = zindex or 2
-    img.Parent                 = parent
-    -- Spritesheet: recortar la porción correcta del icono
-    if rectOffset and rectSize then
-        img.ScaleType        = Enum.ScaleType.Crop
-        img.ImageRectOffset  = rectOffset
-        img.ImageRectSize    = rectSize
-    else
-        img.ScaleType        = Enum.ScaleType.Fit
-    end
-    return img
-end
-
 local T = {
-    Bg          = Color3.fromRGB(0,   0,   0),
-    Sidebar     = Color3.fromRGB(0,   0,   0),
-    Header      = Color3.fromRGB(3,   3,   3),
-    Accent      = Color3.fromRGB(40,  40,  40),
-    AccentDark  = Color3.fromRGB(20,  20,  20),
+    Bg          = Color3.fromRGB(8,   8,   8),
+    Sidebar     = Color3.fromRGB(4,   4,   4),
+    Header      = Color3.fromRGB(5,   5,   5),
+    Accent      = Color3.fromRGB(0,   195, 220),
+    AccentDark  = Color3.fromRGB(0,   110, 135),
     Text        = Color3.fromRGB(230, 230, 230),
-    TextRed     = Color3.fromRGB(140, 140, 140),
-    TextDim     = Color3.fromRGB(80,  80,  80),
-    Elem        = Color3.fromRGB(10,  10,  10),
-    ElemHov     = Color3.fromRGB(18,  18,  18),
-    Border      = Color3.fromRGB(40,  40,  40),
-    BorderDim   = Color3.fromRGB(25,  25,  25),
-    SliderFill  = Color3.fromRGB(40,  40,  40),
-    SliderBg    = Color3.fromRGB(18,  18,  18),
-    ToggleOn    = Color3.fromRGB(55,  55,  55),
-    ToggleOff   = Color3.fromRGB(28,  28,  28),
-    TabActive   = Color3.fromRGB(15,  15,  15),
-    TabInactive = Color3.fromRGB(6,   6,   6),
+    TextRed     = Color3.fromRGB(0,   195, 220),
+    TextDim     = Color3.fromRGB(95,  95,  95),
+    Elem        = Color3.fromRGB(13,  13,  13),
+    ElemHov     = Color3.fromRGB(20,  20,  20),
+    Border      = Color3.fromRGB(0,   195, 220),
+    BorderDim   = Color3.fromRGB(30,  30,  30),
+    SliderFill  = Color3.fromRGB(0,   195, 220),
+    SliderBg    = Color3.fromRGB(26,  26,  26),
+    ToggleOn    = Color3.fromRGB(0,   195, 220),
+    ToggleOff   = Color3.fromRGB(36,  36,  36),
+    TabActive   = Color3.fromRGB(18,  18,  18),
+    TabInactive = Color3.fromRGB(9,   9,   9),
 }
 
 local _accentObjs = {}
@@ -296,8 +28,103 @@ local _accentDarkObjs = {}
 local function _regAcc(o, p)  table.insert(_accentObjs,     {o, p}) end
 local function _regDark(o, p) table.insert(_accentDarkObjs, {o, p}) end
 
+-- ── Lucide icon support ─────────────────────────────────────────────────────
+-- Usage:
+--   local Lucide = require(path.to.lucide-roblox)
+--   NytherUI.SetLucideModule(Lucide)
+--
+-- Then pass icon names to NewTab as:
+--   NewTab("Settings", "lucide:settings", 1)
+-- or using the Lucide prefix shorthand:
+--   NewTab("Home",     "lucide:home",     2)
+--
+-- You can also create standalone icon ImageLabels anywhere:
+--   NytherUI.LucideIcon("settings", parent, 18)  --> returns ImageLabel
+
+local _lucideModule = nil
+
+-- Set the required lucide-roblox module so the library can resolve icon names.
+local function SetLucideModule(mod)
+    _lucideModule = mod
+end
+
+-- Internal: resolves any icon value into a descriptor table.
+-- Returns { kind = "image",  id, rectSize, rectOffset }
+--       | { kind = "lucide", img }          -- already an ImageLabel
+--       | { kind = "text",   text }
+local function _resolveIcon(icon, size)
+    size = size or 48
+
+    -- "lucide:icon-name" string
+    if type(icon) == "string" and icon:match("^lucide:") then
+        local name = icon:sub(8)   -- strip "lucide:"
+        if _lucideModule then
+            local ok, asset = pcall(function()
+                return _lucideModule.GetAsset(name, size)
+            end)
+            if ok and asset then
+                return {
+                    kind       = "lucide",
+                    id         = tostring(asset.Id),
+                    rectSize   = asset.ImageRectSize,
+                    rectOffset = asset.ImageRectOffset,
+                }
+            end
+        end
+        -- Fallback: treat as a plain text icon so the tab still renders
+        return { kind = "text", text = "◈" }
+    end
+
+    -- Numeric asset ID  or  "rbxassetid://…"  or  plain digit string
+    local isImage = (type(icon) == "number") or
+                    (type(icon) == "string" and
+                     (icon:match("^%d+$") or icon:match("^rbxassetid://")))
+    if isImage then
+        local rawId = type(icon) == "number" and tostring(icon)
+                      or (icon:match("^%d+$") and icon or icon:gsub("rbxassetid://",""))
+        return { kind = "image", id = rawId }
+    end
+
+    -- Plain text / emoji
+    return { kind = "text", text = icon }
+end
+
+-- Public helper: creates a Lucide ImageLabel you can place anywhere.
+-- parent   : Instance to parent the label to (optional, set later if nil)
+-- iconName : Lucide icon name, e.g. "settings", "home", "shield"
+-- size     : pixel size of the image (default 18)
+-- color    : ImageColor3 (default T.Text)
+local function LucideIcon(iconName, parent, size, color)
+    size  = size  or 18
+    color = color or T.Text
+    local img = Instance.new("ImageLabel")
+    img.Size                 = UDim2.new(0, size, 0, size)
+    img.BackgroundTransparency = 1
+    img.ImageColor3          = color
+    img.ScaleType            = Enum.ScaleType.Fit
+    img.Parent               = parent
+
+    if _lucideModule then
+        local ok, asset = pcall(function()
+            return _lucideModule.GetAsset(iconName, 48)
+        end)
+        if ok and asset then
+            img.Image            = asset.Url
+            img.ImageRectSize    = asset.ImageRectSize
+            img.ImageRectOffset  = asset.ImageRectOffset
+        else
+            img.Image = ""
+        end
+    else
+        img.Image = ""
+    end
+    return img
+end
+-- ────────────────────────────────────────────────────────────────────────────
+
 local function setAccentColor(color)
     T.Accent     = color
+    T.TextRed    = color
     T.Border     = color
     T.SliderFill = color
     T.ToggleOn   = color
@@ -378,7 +205,7 @@ titleLabel.Parent             = topBar
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size             = UDim2.new(0, 26, 0, 26)
 closeBtn.Position         = UDim2.new(1, -33, 0.5, -13)
-closeBtn.BackgroundColor3 = T.AccentDark
+closeBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 155)
 closeBtn.BorderSizePixel  = 0
 closeBtn.Text             = "X"
 closeBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
@@ -388,13 +215,12 @@ closeBtn.AutoButtonColor  = false
 closeBtn.ZIndex           = 8
 closeBtn.Parent           = topBar
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
-_regDark(closeBtn, "BackgroundColor3")
 closeBtn.MouseButton1Click:Connect(function() mainFrame.Visible = false end)
 closeBtn.MouseEnter:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.Accent}):Play()
 end)
 closeBtn.MouseLeave:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = T.AccentDark}):Play()
+    TweenService:Create(closeBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(0, 130, 155)}):Play()
 end)
 local bodyFrame = Instance.new("Frame")
 bodyFrame.Size              = UDim2.new(1, 0, 1, -60)
@@ -429,6 +255,7 @@ footerLabel.Font                  = Enum.Font.GothamSemibold
 footerLabel.TextXAlignment        = Enum.TextXAlignment.Center
 footerLabel.ZIndex                = 6
 footerLabel.Parent                = footer
+_regAcc(footerLabel, "TextColor3")
 local sidebar = Instance.new("Frame")
 sidebar.Name             = "Sidebar"
 sidebar.Size             = UDim2.new(0, 118, 1, 0)
@@ -485,7 +312,6 @@ local function SelectTab(target)
     end
     if target.onTabSelected then target.onTabSelected() end
 end
-
 local function NewTab(name, icon, order)
     local btn = Instance.new("TextButton")
     btn.Name             = "Tab_"..name
@@ -497,7 +323,6 @@ local function NewTab(name, icon, order)
     btn.LayoutOrder      = order
     btn.Parent           = sidebar
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-
     local accentBar = Instance.new("Frame")
     accentBar.Name             = "Accent"
     accentBar.Size             = UDim2.new(0, 3, 0, 20)
@@ -508,16 +333,39 @@ local function NewTab(name, icon, order)
     accentBar.Parent           = btn
     Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
     _regAcc(accentBar, "BackgroundColor3")
-
-    local rawId, iconIsImage, rectOffset, rectSize = resolveIcon(icon)
-    local hasVisibleIcon = iconIsImage and rawId ~= nil
-
-    local iconImgRef = hasVisibleIcon and MakeIconImg(btn, rawId, 16, 11, 0, T.TextDim, 2, rectOffset, rectSize) or nil
-
+    -- Resolve icon (supports "lucide:name", numeric IDs, rbxassetid://, or text)
+    local iconDesc = _resolveIcon(icon, 48)
+    if iconDesc.kind == "image" or iconDesc.kind == "lucide" then
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.Name                 = "IconImg"
+        iconImg.Size                 = UDim2.new(0, 18, 0, 18)
+        iconImg.Position             = UDim2.new(0, 10, 0.5, -9)
+        iconImg.BackgroundTransparency = 1
+        iconImg.ImageColor3          = T.TextDim
+        iconImg.ScaleType            = Enum.ScaleType.Fit
+        iconImg.Parent               = btn
+        if iconDesc.kind == "lucide" then
+            iconImg.Image           = "rbxassetid://" .. iconDesc.id
+            iconImg.ImageRectSize   = iconDesc.rectSize
+            iconImg.ImageRectOffset = iconDesc.rectOffset
+        else
+            iconImg.Image = "rbxassetid://" .. iconDesc.id
+        end
+    else
+        local iconLbl = Instance.new("TextLabel")
+        iconLbl.Size                 = UDim2.new(0, 22, 1, 0)
+        iconLbl.Position             = UDim2.new(0, 9, 0, 0)
+        iconLbl.BackgroundTransparency = 1
+        iconLbl.Text                 = iconDesc.text or icon
+        iconLbl.TextSize             = 15
+        iconLbl.Font                 = Enum.Font.GothamSemibold
+        iconLbl.TextXAlignment       = Enum.TextXAlignment.Center
+        iconLbl.Parent               = btn
+    end
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Name                 = "Label"
-    nameLbl.Size     = hasVisibleIcon and UDim2.new(1, -34, 1, 0) or UDim2.new(1, -14, 1, 0)
-    nameLbl.Position = hasVisibleIcon and UDim2.new(0, 33, 0, 0)  or UDim2.new(0, 10, 0, 0)
+    nameLbl.Size                 = UDim2.new(1, -36, 1, 0)
+    nameLbl.Position             = UDim2.new(0, 35, 0, 0)
     nameLbl.BackgroundTransparency = 1
     nameLbl.Text                 = name
     nameLbl.TextColor3           = T.TextDim
@@ -525,9 +373,7 @@ local function NewTab(name, icon, order)
     nameLbl.Font                 = Enum.Font.GothamSemibold
     nameLbl.TextXAlignment       = Enum.TextXAlignment.Left
     nameLbl.TextTruncate         = Enum.TextTruncate.AtEnd
-    nameLbl.ZIndex               = 2
     nameLbl.Parent               = btn
-
     local page = Instance.new("ScrollingFrame")
     page.Size                  = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
@@ -549,16 +395,8 @@ local function NewTab(name, icon, order)
     pagePad.PaddingLeft   = UDim.new(0, 9)
     pagePad.PaddingRight  = UDim.new(0, 10)
     pagePad.Parent        = page
-
-    local tabData = {
-        btn        = btn,
-        accent     = accentBar,
-        nameLbl    = nameLbl,
-        page       = page,
-        iconImg    = iconImgRef,   -- nil si no hay ícono (sin crash)
-    }
+    local tabData = {btn = btn, accent = accentBar, nameLbl = nameLbl, page = page, iconImg = btn:FindFirstChild("IconImg")}
     table.insert(registeredTabs, tabData)
-
     btn.MouseButton1Click:Connect(function() SelectTab(tabData) end)
     btn.MouseEnter:Connect(function()
         if page.Visible or (tabData.customPanel and tabData.customPanel.Visible) then return end
@@ -570,7 +408,6 @@ local function NewTab(name, icon, order)
     end)
     return page, tabData
 end
-
 local _ord = 0
 local function nextOrd() _ord += 1; return _ord end
 local function Stroke(parent, color, thickness)
@@ -618,6 +455,7 @@ local function NewSection(parent, title)
     hdrTxt.Font              = Enum.Font.GothamSemibold
     hdrTxt.TextXAlignment    = Enum.TextXAlignment.Left
     hdrTxt.Parent            = hdr
+    _regAcc(hdrTxt, "TextColor3")
     local hdrLine = Instance.new("Frame")
     hdrLine.Size             = UDim2.new(1, 0, 0, 1)
     hdrLine.Position         = UDim2.new(0, 0, 1, -1)
@@ -627,20 +465,11 @@ local function NewSection(parent, title)
     _regDark(hdrLine, "BackgroundColor3")
     return sec
 end
-local function NewToggle(parent, label, sub, default, callback, icon)
+local function NewToggle(parent, label, sub, default, callback)
     local f, stroke = ElemBase(parent, 46)
-
-    local rawId, iconIsImage, rectOffset, rectSize = resolveIcon(icon)
-    local hasIcon = iconIsImage and rawId ~= nil
-    local txtX    = hasIcon and 36 or 10
-
-    if hasIcon then
-        MakeIconImg(f, rawId, 16, 11, 0, T.TextDim, 2, rectOffset, rectSize)
-    end
-
     local lbl = Instance.new("TextLabel")
-    lbl.Size              = UDim2.new(1, -(txtX + 58), 0, 18)
-    lbl.Position          = UDim2.new(0, txtX, 0, 7)
+    lbl.Size              = UDim2.new(1, -58, 0, 18)
+    lbl.Position          = UDim2.new(0, 10, 0, 7)
     lbl.BackgroundTransparency = 1
     lbl.Text              = label
     lbl.TextColor3        = T.Text
@@ -650,8 +479,8 @@ local function NewToggle(parent, label, sub, default, callback, icon)
     lbl.TextTruncate      = Enum.TextTruncate.AtEnd
     lbl.Parent            = f
     local subLbl = Instance.new("TextLabel")
-    subLbl.Size              = UDim2.new(1, -(txtX + 58), 0, 14)
-    subLbl.Position          = UDim2.new(0, txtX, 0, 25)
+    subLbl.Size              = UDim2.new(1, -58, 0, 14)
+    subLbl.Position          = UDim2.new(0, 10, 0, 25)
     subLbl.BackgroundTransparency = 1
     subLbl.Text              = sub
     subLbl.TextColor3        = T.TextDim
@@ -780,6 +609,7 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback)
     valLbl.Font              = Enum.Font.GothamSemibold
     valLbl.TextXAlignment    = Enum.TextXAlignment.Right
     valLbl.Parent            = f
+    _regAcc(valLbl, "TextColor3")
     local trackBg = Instance.new("Frame")
     trackBg.Size             = UDim2.new(1, -20, 0, 6)
     trackBg.Position         = UDim2.new(0, 10, 1, -16)
@@ -839,20 +669,11 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback)
     end)
     return f
 end
-local function NewButton(parent, label, sub, callback, icon)
+local function NewButton(parent, label, sub, callback)
     local f, stroke = ElemBase(parent, 46)
-
-    local rawId, iconIsImage, rectOffset, rectSize = resolveIcon(icon)
-    local hasIcon = iconIsImage and rawId ~= nil
-    local txtX    = hasIcon and 36 or 10          -- offset horizontal del texto
-
-    if hasIcon then
-        MakeIconImg(f, rawId, 16, 11, 0, T.TextDim, 2, rectOffset, rectSize)
-    end
-
     local lbl = Instance.new("TextLabel")
-    lbl.Size              = UDim2.new(1, -(txtX + 40), 0, 18)
-    lbl.Position          = UDim2.new(0, txtX, 0, 7)
+    lbl.Size              = UDim2.new(1, -50, 0, 18)
+    lbl.Position          = UDim2.new(0, 10, 0, 7)
     lbl.BackgroundTransparency = 1
     lbl.Text              = label
     lbl.TextColor3        = T.Text
@@ -862,8 +683,8 @@ local function NewButton(parent, label, sub, callback, icon)
     lbl.TextTruncate      = Enum.TextTruncate.AtEnd
     lbl.Parent            = f
     local subLbl = Instance.new("TextLabel")
-    subLbl.Size              = UDim2.new(1, -(txtX + 40), 0, 14)
-    subLbl.Position          = UDim2.new(0, txtX, 0, 25)
+    subLbl.Size              = UDim2.new(1, -50, 0, 14)
+    subLbl.Position          = UDim2.new(0, 10, 0, 25)
     subLbl.BackgroundTransparency = 1
     subLbl.Text              = sub
     subLbl.TextColor3        = T.TextDim
@@ -881,6 +702,7 @@ local function NewButton(parent, label, sub, callback, icon)
     arrow.TextSize          = 22
     arrow.Font              = Enum.Font.GothamSemibold
     arrow.Parent            = f
+    _regAcc(arrow, "TextColor3")
     local btn = Instance.new("TextButton")
     btn.Size                 = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
@@ -1009,6 +831,7 @@ local function NewKeybind(parent, label, sub, defaultKey, callback)
     keyLbl.TextSize             = 11
     keyLbl.Font                 = Enum.Font.GothamSemibold
     keyLbl.Parent               = keyBg
+    _regAcc(keyLbl, "TextColor3")
     local keyBtn = Instance.new("TextButton")
     keyBtn.Size                 = UDim2.new(1, 0, 1, 0)
     keyBtn.BackgroundTransparency = 1
@@ -1390,10 +1213,8 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback)
     return container
 end
 local function NewSearchPanel(searchTabData, opts)
-    local getWeapons   = opts and opts.getWeapons
-    local onSend       = opts and opts.onSend
-    local hideAmount   = opts and opts.hideAmount
-    local buttonLabel  = (opts and opts.buttonLabel) or "Enviar arma"
+    local getWeapons = opts and opts.getWeapons
+    local onSend     = opts and opts.onSend
     local selectedWeapon  = nil
     local selectedAmount  = 1
     local weaponRowFrames = {}
@@ -1412,8 +1233,7 @@ local function NewSearchPanel(searchTabData, opts)
     searchBarBg.BorderSizePixel  = 0
     searchBarBg.Parent           = searchOuter
     Corner(searchBarBg, 6)
-    local _sbStroke = Stroke(searchBarBg, T.Border, 1)
-    _regAcc(_sbStroke, "Color")
+    Stroke(searchBarBg, T.Border, 1)
     local searchIcon = Instance.new("TextLabel")
     searchIcon.Size                 = UDim2.new(0, 28, 1, 0)
     searchIcon.BackgroundTransparency = 1
@@ -1448,7 +1268,7 @@ local function NewSearchPanel(searchTabData, opts)
     listFrame.Parent                = searchOuter
     _regAcc(listFrame, "ScrollBarImageColor3")
     Corner(listFrame, 6)
-    local _lfStroke = Stroke(listFrame, T.BorderDim, 1)
+    Stroke(listFrame, T.BorderDim, 1)
     local listLayout = Instance.new("UIListLayout")
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
     listLayout.Padding   = UDim.new(0, 2)
@@ -1490,6 +1310,7 @@ local function NewSearchPanel(searchTabData, opts)
     minusBtn.AutoButtonColor  = false
     minusBtn.Parent           = bottomPanel
     Corner(minusBtn, 4)
+    _regAcc(minusBtn, "TextColor3")
     local amountLabel = Instance.new("TextLabel")
     amountLabel.Size                 = UDim2.new(0, 40, 0, 26)
     amountLabel.Position             = UDim2.new(0, 38, 0, 28)
@@ -1512,12 +1333,13 @@ local function NewSearchPanel(searchTabData, opts)
     plusBtn.AutoButtonColor  = false
     plusBtn.Parent           = bottomPanel
     Corner(plusBtn, 4)
+    _regAcc(plusBtn, "TextColor3")
     local sendBtn = Instance.new("TextButton")
     sendBtn.Size             = UDim2.new(0, 110, 0, 26)
     sendBtn.Position         = UDim2.new(1, -118, 0, 28)
     sendBtn.BackgroundColor3 = T.AccentDark
     sendBtn.BorderSizePixel  = 0
-    sendBtn.Text             = buttonLabel
+    sendBtn.Text             = "Enviar arma"
     sendBtn.TextColor3       = Color3.fromRGB(230, 230, 230)
     sendBtn.TextSize         = 12
     sendBtn.Font             = Enum.Font.GothamSemibold
@@ -1615,13 +1437,6 @@ local function NewSearchPanel(searchTabData, opts)
         if not selectedWeapon then return end
         if onSend then onSend(selectedWeapon, selectedAmount) end
     end)
-    if hideAmount then
-        minusBtn.Visible    = false
-        amountLabel.Visible = false
-        plusBtn.Visible     = false
-        sendBtn.Size        = UDim2.new(1, -16, 0, 26)
-        sendBtn.Position    = UDim2.new(0, 8, 0, 28)
-    end
     searchTabData.customPanel   = searchOuter
     searchTabData.onTabSelected = function() BuildList(searchBox.Text) end
 end
@@ -1647,114 +1462,22 @@ UserInputService.InputChanged:Connect(function(inp)
         )
     end
 end)
-
--- ── Notification System ──────────────────────────────────────────────
-local _notifGui = Instance.new("ScreenGui")
-_notifGui.Name            = "iDepHubNotifs"
-_notifGui.ResetOnSpawn    = false
-_notifGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-_notifGui.DisplayOrder    = 1000
-_notifGui.Parent          = playerGui
-
-local _notifOffset = 0
-local _notifSlots  = {}
-
-local function sendNotification(title, text, duration)
-    local slotY = -80 - (_notifOffset * 70)
-    _notifOffset = _notifOffset + 1
-
-    local card = Instance.new("Frame")
-    card.Size                   = UDim2.new(0, 300, 0, 60)
-    card.Position               = UDim2.new(1, 10, 1, slotY)
-    card.BackgroundColor3       = Color3.fromRGB(5, 5, 5)
-    card.BackgroundTransparency = 0.05
-    card.BorderSizePixel        = 0
-    card.ZIndex                 = 100
-    card.Parent                 = _notifGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 9)
-    corner.Parent       = card
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color        = T.Accent
-    stroke.Thickness    = 1.4
-    stroke.Transparency = 0.25
-    stroke.Parent       = card
-    table.insert(_accentObjs, {stroke, "Color"})
-
-    local accent = Instance.new("Frame")
-    accent.Size             = UDim2.new(0, 3, 1, -16)
-    accent.Position         = UDim2.new(0, 8, 0, 8)
-    accent.BackgroundColor3 = T.Accent
-    accent.BorderSizePixel  = 0
-    accent.ZIndex           = 101
-    accent.Parent           = card
-    table.insert(_accentObjs, {accent, "BackgroundColor3"})
-    Instance.new("UICorner", accent).CornerRadius = UDim.new(1, 0)
-
-    local titleL = Instance.new("TextLabel")
-    titleL.Size               = UDim2.new(1, -26, 0, 24)
-    titleL.Position           = UDim2.new(0, 20, 0, 8)
-    titleL.BackgroundTransparency = 1
-    titleL.Text               = title
-    titleL.TextColor3         = Color3.fromRGB(240, 240, 240)
-    titleL.TextSize           = 14
-    titleL.Font               = Enum.Font.GothamBold
-    titleL.TextXAlignment     = Enum.TextXAlignment.Left
-    titleL.ZIndex             = 102
-    titleL.Parent             = card
-
-    local textL = Instance.new("TextLabel")
-    textL.Size                = UDim2.new(1, -26, 0, 20)
-    textL.Position            = UDim2.new(0, 20, 0, 33)
-    textL.BackgroundTransparency = 1
-    textL.Text                = text
-    textL.TextColor3          = Color3.fromRGB(170, 170, 170)
-    textL.TextSize            = 12
-    textL.Font                = Enum.Font.Gotham
-    textL.TextXAlignment      = Enum.TextXAlignment.Left
-    textL.TextWrapped         = true
-    textL.ZIndex              = 102
-    textL.Parent              = card
-
-    TweenService:Create(card, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        Position = UDim2.new(1, -316, 1, slotY)
-    }):Play()
-
-    task.delay(math.max(duration or 2, 0.8), function()
-        local tw = TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(1, 10, 1, slotY),
-            BackgroundTransparency = 1,
-        })
-        tw:Play()
-        tw.Completed:Connect(function()
-            card:Destroy()
-            _notifOffset = math.max(0, _notifOffset - 1)
-        end)
-    end)
-end
-
 return {
-    titleLabel       = titleLabel,
-    setAccentColor   = setAccentColor,
-    registerIcon     = registerIcon,
-    registerIcons    = registerIcons,
-    initLucideModule = initLucideModule,
-    tryLoadIconPack  = tryLoadIconPack,
-    LucideIcons      = LucideIcons,
-    NewTab           = NewTab,
-    NewSection       = NewSection,
-    NewToggle        = NewToggle,         
-    NewSlider        = NewSlider,
-    NewButton        = NewButton,         
-    NewInput         = NewInput,
-    NewKeybind       = NewKeybind,
-    NewLabel         = NewLabel,
-    NewColorPicker   = NewColorPicker,
-    NewSearchPanel   = NewSearchPanel,
-    SelectTab        = SelectTab,
-    registeredTabs   = registeredTabs,
-    mainFrame        = mainFrame,
-    sendNotification = sendNotification,
+    titleLabel      = titleLabel,
+    setAccentColor  = setAccentColor,
+    SetLucideModule = SetLucideModule,
+    LucideIcon      = LucideIcon,
+    NewTab          = NewTab,
+    NewSection      = NewSection,
+    NewToggle       = NewToggle,
+    NewSlider       = NewSlider,
+    NewButton       = NewButton,
+    NewInput        = NewInput,
+    NewKeybind      = NewKeybind,
+    NewLabel        = NewLabel,
+    NewColorPicker  = NewColorPicker,
+    NewSearchPanel  = NewSearchPanel,
+    SelectTab       = SelectTab,
+    registeredTabs  = registeredTabs,
+    mainFrame       = mainFrame,
 }
