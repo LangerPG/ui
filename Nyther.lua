@@ -4,7 +4,6 @@ local Players          = game:GetService("Players")
 local LocalPlayer      = Players.LocalPlayer
 
 -- ══════════════════════════════════════════════════════════════════
---   CARGA DE LUCIDE (iconos)
 -- ══════════════════════════════════════════════════════════════════
 local Lucide = nil
 pcall(function()
@@ -20,7 +19,6 @@ local function getLucideAsset(iconName)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   TEMA
 -- ══════════════════════════════════════════════════════════════════
 local T = {
     Bg          = Color3.fromRGB(0,   0,   0),
@@ -263,9 +261,6 @@ local function SelectTab(target)
     if target.onTabSelected then target.onTabSelected() end
 end
 
--- ──────────────────────────────────────────────────────────────────
---   NewTab (con soporte Lucide)
--- ──────────────────────────────────────────────────────────────────
 local function NewTab(name, icon, order)
     local btn = Instance.new("TextButton")
     btn.Name             = "Tab_"..name
@@ -293,7 +288,6 @@ local function NewTab(name, icon, order)
     local hasVisibleIcon = false
     local lucideAsset = nil
 
-    -- Intentar Lucide si es string sin formato de asset id
     if type(icon) == "string" and icon ~= "" and not icon:match("^%d+$") and not icon:match("^rbxassetid://") then
         lucideAsset = getLucideAsset(icon)
     end
@@ -390,7 +384,6 @@ local function NewTab(name, icon, order)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   HELPERS DE INSTANCIAS
 -- ══════════════════════════════════════════════════════════════════
 local _ord = 0
 local function nextOrd() _ord += 1; return _ord end
@@ -418,7 +411,6 @@ local function ElemBase(parent, h)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   SECCIÓN (con icono Lucide opcional)
 -- ══════════════════════════════════════════════════════════════════
 local function NewSection(parent, title, iconName)
     local sec = Instance.new("Frame")
@@ -482,7 +474,6 @@ local function NewSection(parent, title, iconName)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   TOGGLE (con icono Lucide)
 -- ══════════════════════════════════════════════════════════════════
 local function NewToggle(parent, label, sub, default, callback, iconName)
     local f, stroke = ElemBase(parent, 46)
@@ -560,7 +551,6 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     lockOverlay.Parent                = f
     Corner(lockOverlay, 4)
 
-    -- Icono Lucide "lock" (reemplaza el emoji 🔒)
     local lockLucideAsset = getLucideAsset("lock")
     if lockLucideAsset then
         local lockIcon = Instance.new("ImageLabel")
@@ -575,7 +565,6 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
         lockIcon.ZIndex                 = 11
         lockIcon.Parent                 = lockOverlay
     else
-        -- Fallback si Lucide no carga
         local lockIcon = Instance.new("TextLabel")
         lockIcon.Size                 = UDim2.new(0, 18, 1, 0)
         lockIcon.Position             = UDim2.new(0.5, -42, 0, 0)
@@ -625,6 +614,12 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
         if isLocked then setState(false) end
     end
 
+    table.insert(_customAccentCallbacks, function()
+        if state then
+            track.BackgroundColor3 = T.ToggleOn
+        end
+    end)
+
     btn.MouseButton1Click:Connect(function()
         if locked then return end
         setState(not state)
@@ -645,7 +640,6 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   SLIDER (con icono Lucide)
 -- ══════════════════════════════════════════════════════════════════
 local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, iconName)
     local f, stroke = ElemBase(parent, 60)
@@ -773,7 +767,6 @@ local function NewSlider(parent, label, sub, minVal, maxVal, default, callback, 
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   BUTTON (con icono Lucide)
 -- ══════════════════════════════════════════════════════════════════
 local function NewButton(parent, label, sub, callback, iconName)
     local f, stroke = ElemBase(parent, 46)
@@ -857,7 +850,6 @@ local function NewButton(parent, label, sub, callback, iconName)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   INPUT (sin cambios, sin icono)
 -- ══════════════════════════════════════════════════════════════════
 local function NewInput(parent, label, placeholder, callback)
     local f, stroke = ElemBase(parent, 46)
@@ -933,13 +925,12 @@ local function NewInput(parent, label, placeholder, callback)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   KEYBIND (con icono Lucide) - CORREGIDO: variables locales
 -- ══════════════════════════════════════════════════════════════════
 local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
     local f, stroke = ElemBase(parent, 46)
 
-    local listening = false       -- ✅ LOCAL (antes global)
-    local currentKey = defaultKey -- ✅ LOCAL (antes global)
+    local listening = false
+    local currentKey = defaultKey
 
     local labelOffset = 10
     if iconName then
@@ -1048,7 +1039,6 @@ local function NewKeybind(parent, label, sub, defaultKey, callback, iconName)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   LABEL (con icono Lucide)
 -- ══════════════════════════════════════════════════════════════════
 local function NewLabel(parent, text, iconName)
     local f, _ = ElemBase(parent, 30)
@@ -1087,7 +1077,6 @@ local function NewLabel(parent, text, iconName)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   COLOR PICKER (con icono Lucide en el header)
 -- ══════════════════════════════════════════════════════════════════
 local function NewColorPicker(parent, label, sub, defaultColor, callback, iconName)
     defaultColor = defaultColor or Color3.fromRGB(15, 15, 15)
@@ -1146,7 +1135,6 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
     Corner(header, 4)
     local hStroke = Stroke(header, T.BorderDim, 1)
 
-    -- Icono opcional en el header
     local labelOffset = 10
     if iconName then
         local asset = getLucideAsset(iconName)
@@ -1485,7 +1473,6 @@ local function NewColorPicker(parent, label, sub, defaultColor, callback, iconNa
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   SEARCH PANEL (sin cambios)
 -- ══════════════════════════════════════════════════════════════════
 local function NewSearchPanel(searchTabData, opts)
     local getWeapons   = opts and opts.getWeapons
@@ -1756,7 +1743,6 @@ local function NewSearchPanel(searchTabData, opts)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   DRAG
 -- ══════════════════════════════════════════════════════════════════
 local isDragging, dragStart, frameStart = false, nil, nil
 
@@ -1785,7 +1771,6 @@ UserInputService.InputChanged:Connect(function(inp)
 end)
 
 -- ══════════════════════════════════════════════════════════════════
---   NOTIFICACIONES
 -- ══════════════════════════════════════════════════════════════════
 local _notifGui = Instance.new("ScreenGui")
 _notifGui.Name            = "iDepHubNotifs"
@@ -1874,7 +1859,6 @@ local function sendNotification(title, text, duration)
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   BODY PART SELECTOR (desplegable, estilo ColorPicker)
 -- ══════════════════════════════════════════════════════════════════
 local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, defaultParts, extRefreshTable, iconName)
     local RH_ROW  = 32
@@ -1886,8 +1870,8 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     local ABH     = 26
     local legW    = math.floor((CW - CG) / 2)
 
-    local TOTAL_INNER_W = LW + CG + CW + CG + LW   -- 182
-    local CONTENT_W     = TOTAL_INNER_W + PAD * 2   -- 206
+    local TOTAL_INNER_W = LW + CG + CW + CG + LW
+    local CONTENT_W     = TOTAL_INNER_W + PAD * 2
 
     local ROWS   = 7
     local function rowY(r) return PAD + (r - 1) * (RH_ROW + RG) end
@@ -1895,7 +1879,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     local AB_Y   = SEP_Y + 8
     local BODY_H = AB_Y + ABH + PAD
 
-    -- ── contenedor externo ──
     local container = Instance.new("Frame")
     container.Size               = UDim2.new(1, 0, 0, 0)
     container.AutomaticSize      = Enum.AutomaticSize.Y
@@ -1908,7 +1891,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     cLayout.Padding   = UDim.new(0, 0)
     cLayout.Parent    = container
 
-    -- ── header (colapsable) ──
     local header = Instance.new("Frame")
     header.Size             = UDim2.new(1, 0, 0, 46)
     header.BackgroundColor3 = T.Elem
@@ -1961,7 +1943,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     subLbl.TextTruncate   = Enum.TextTruncate.AtEnd
     subLbl.Parent         = header
 
-    -- badge con conteo de partes seleccionadas
     local badgeBg = Instance.new("Frame")
     badgeBg.Size             = UDim2.new(0, 36, 0, 28)
     badgeBg.Position         = UDim2.new(1, -46, 0, 9)
@@ -1982,7 +1963,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     countLbl.Parent               = badgeBg
     _regAcc(countLbl, "TextColor3")
 
-    -- ── body (colapsable) ──
     local body = Instance.new("Frame")
     body.Size             = UDim2.new(1, 0, 0, BODY_H)
     body.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
@@ -1993,7 +1973,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     body.Parent           = container
     Corner(body, 4)
 
-    -- holder centrado
     local ch = Instance.new("Frame")
     ch.Size        = UDim2.new(0, CONTENT_W, 1, 0)
     ch.AnchorPoint = Vector2.new(0.5, 0)
@@ -2006,7 +1985,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     local rx       = cx + CW + CG
     local cxCenter = cx + math.floor(CW / 2)
 
-    -- ── conectores decorativos (detrás de los botones) ──
     local function makeDeco(x, y, w, h)
         local d = Instance.new("Frame")
         d.Size             = UDim2.new(0, w, 0, h)
@@ -2018,22 +1996,14 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
         return d
     end
 
-    -- Cuello (head → UT)
     makeDeco(cxCenter - 1, rowY(1) + RH_ROW, 2, RG)
-    -- Columna vertebral (UT top → LT bottom)
     makeDeco(cxCenter - 1, rowY(2), 2, RH_ROW + RG + RH_ROW)
-    -- Conector cintura → piernas
     makeDeco(cxCenter - 1, rowY(3) + RH_ROW, 2, RG)
-    -- Hombro izquierdo
     makeDeco(lx + LW, rowY(2) + math.floor(RH_ROW / 2) - 1, CG, 2)
-    -- Hombro derecho
     makeDeco(cx + CW, rowY(2) + math.floor(RH_ROW / 2) - 1, CG, 2)
-    -- Codo izquierdo
     makeDeco(lx + LW, rowY(3) + math.floor(RH_ROW / 2) - 1, CG, 2)
-    -- Codo derecho
     makeDeco(cx + CW, rowY(3) + math.floor(RH_ROW / 2) - 1, CG, 2)
 
-    -- ── lógica de partes ──
     local localRefreshFns = {}
 
     local function countSelected()
@@ -2093,7 +2063,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
         end)
     end
 
-    -- ── disposición del muñeco ──
     makePartBtn("H",   "Head",          cx + math.floor((CW-LW)/2), rowY(1), LW, RH_ROW)
     makePartBtn("LUA", "LeftUpperArm",  lx, rowY(2), LW, RH_ROW)
     makePartBtn("UT",  "UpperTorso",    cx, rowY(2), CW, RH_ROW, "Torso")
@@ -2110,7 +2079,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     makePartBtn("LF",  "LeftFoot",      cx,          rowY(7), legW, RH_ROW)
     makePartBtn("RF",  "RightFoot",     cx+legW+CG,  rowY(7), legW, RH_ROW)
 
-    -- separador
     local sep = Instance.new("Frame")
     sep.Size             = UDim2.new(1, -PAD*2, 0, 1)
     sep.Position         = UDim2.new(0, PAD, 0, SEP_Y)
@@ -2118,7 +2086,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
     sep.BorderSizePixel  = 0
     sep.Parent           = ch
 
-    -- botones de acción (negro + texto accent)
     local ABW      = math.floor((TOTAL_INNER_W - CG * 2) / 3)
     local abStartX = lx
 
@@ -2164,13 +2131,11 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
         updateCount()
     end)
 
-    -- actualizar colores cuando cambia el accent
     table.insert(_customAccentCallbacks, function()
         for _, fn in pairs(localRefreshFns) do fn() end
         updateCount()
     end)
 
-    -- ── toggle expand / collapse ──
     local headerBtn = Instance.new("TextButton")
     headerBtn.Size                 = UDim2.new(1, 0, 1, 0)
     headerBtn.BackgroundTransparency = 1
@@ -2205,7 +2170,6 @@ local function NewBodyPartSelector(parent, label, sub, selectedParts, allParts, 
 end
 
 -- ══════════════════════════════════════════════════════════════════
---   API PÚBLICA
 -- ══════════════════════════════════════════════════════════════════
 return {
     titleLabel           = titleLabel,
