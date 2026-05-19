@@ -198,6 +198,7 @@ footerLabel.Font                  = Enum.Font.GothamSemibold
 footerLabel.TextXAlignment        = Enum.TextXAlignment.Center
 footerLabel.ZIndex                = 6
 footerLabel.Parent                = footer
+_regAcc(footerLabel, "TextColor3")
 
 local sidebar = Instance.new("Frame")
 sidebar.Name             = "Sidebar"
@@ -559,18 +560,35 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     lockOverlay.Parent                = f
     Corner(lockOverlay, 4)
 
-    local lockIcon = Instance.new("TextLabel")
-    lockIcon.Size                 = UDim2.new(0, 18, 1, 0)
-    lockIcon.Position             = UDim2.new(0.5, -42, 0, 0)
-    lockIcon.BackgroundTransparency = 1
-    lockIcon.Text                 = "🔒"
-    lockIcon.TextSize             = 13
-    lockIcon.Font                 = Enum.Font.GothamSemibold
-    lockIcon.TextColor3           = Color3.fromRGB(200, 200, 200)
-    lockIcon.TextXAlignment       = Enum.TextXAlignment.Center
-    lockIcon.TextYAlignment       = Enum.TextYAlignment.Center
-    lockIcon.ZIndex               = 11
-    lockIcon.Parent               = lockOverlay
+    -- Icono Lucide "lock" (reemplaza el emoji 🔒)
+    local lockLucideAsset = getLucideAsset("lock")
+    if lockLucideAsset then
+        local lockIcon = Instance.new("ImageLabel")
+        lockIcon.Size                   = UDim2.new(0, 14, 0, 14)
+        lockIcon.Position               = UDim2.new(0.5, -38, 0.5, -7)
+        lockIcon.BackgroundTransparency = 1
+        lockIcon.Image                  = lockLucideAsset.Url
+        lockIcon.ImageRectSize          = lockLucideAsset.ImageRectSize
+        lockIcon.ImageRectOffset        = lockLucideAsset.ImageRectOffset
+        lockIcon.ScaleType              = Enum.ScaleType.Fit
+        lockIcon.ImageColor3            = Color3.fromRGB(200, 200, 200)
+        lockIcon.ZIndex                 = 11
+        lockIcon.Parent                 = lockOverlay
+    else
+        -- Fallback si Lucide no carga
+        local lockIcon = Instance.new("TextLabel")
+        lockIcon.Size                 = UDim2.new(0, 18, 1, 0)
+        lockIcon.Position             = UDim2.new(0.5, -42, 0, 0)
+        lockIcon.BackgroundTransparency = 1
+        lockIcon.Text                 = "🔒"
+        lockIcon.TextSize             = 13
+        lockIcon.Font                 = Enum.Font.GothamBold
+        lockIcon.TextColor3           = Color3.fromRGB(200, 200, 200)
+        lockIcon.TextXAlignment       = Enum.TextXAlignment.Center
+        lockIcon.TextYAlignment       = Enum.TextYAlignment.Center
+        lockIcon.ZIndex               = 11
+        lockIcon.Parent               = lockOverlay
+    end
 
     local lockTxt = Instance.new("TextLabel")
     lockTxt.Size                 = UDim2.new(0, 56, 1, 0)
@@ -578,7 +596,7 @@ local function NewToggle(parent, label, sub, default, callback, iconName)
     lockTxt.BackgroundTransparency = 1
     lockTxt.Text                 = "Locked"
     lockTxt.TextSize             = 13
-    lockTxt.Font                 = Enum.Font.GothamSemibold
+    lockTxt.Font                 = Enum.Font.GothamBold
     lockTxt.TextColor3           = Color3.fromRGB(200, 200, 200)
     lockTxt.TextXAlignment       = Enum.TextXAlignment.Left
     lockTxt.TextYAlignment       = Enum.TextYAlignment.Center
